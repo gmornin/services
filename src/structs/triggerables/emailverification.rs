@@ -23,7 +23,7 @@ pub struct EmailVerification {
 #[typetag::serde]
 #[async_trait]
 impl Triggerable for EmailVerification {
-    async fn init(&self, _db: &Database) -> Result<(), Box<dyn Error>> {
+    async fn init(&self, _db: &Database, id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
         let email_username = env::var("SMTP_USERNAME").expect("`SMTP_USERNAME` not found in env");
         let email_password = env::var("SMTP_PASSWORD").expect("`SMTP_PASSWORD` not found in env");
         let smtp_relay = env::var("SMTP_RELAY").expect("`SMTP_RELAY` not found in env");
@@ -37,7 +37,7 @@ impl Triggerable for EmailVerification {
             .body(format!(
                 "{}{}",
                 env::var("TRIGGER_URL").expect("cannot find `TRIGGER_URL` in env"),
-                self.id
+                id
             ))?;
 
         let creds = Credentials::new(email_username, email_password);
@@ -51,7 +51,7 @@ impl Triggerable for EmailVerification {
         Ok(())
     }
 
-    async fn trigger(&self, db: &Database) -> Result<(), Box<dyn Error>> {
+    async fn trigger(&self, db: &Database, _id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
         let accounts = get_accounts(db);
         let mut account = accounts
             .find_one(doc! {"_id": &self.id}, None)

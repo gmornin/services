@@ -7,6 +7,7 @@ mod create;
 mod delete;
 mod gettoken;
 mod regeneratetoken;
+mod rename;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -53,4 +54,5 @@ pub fn scope() -> Scope {
         .service(delete::delete)
         .service(gettoken::get_token)
         .service(regeneratetoken::regenerate_token)
+        .service(rename::rename)
 }

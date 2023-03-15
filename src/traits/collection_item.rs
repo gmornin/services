@@ -5,7 +5,7 @@ use serde::{de::DeserializeOwned, Serialize};
 #[async_trait]
 pub trait CollectionItem
 where
-    Self: Sized + Clone + Send + Serialize + DeserializeOwned,
+    Self: Sized + Clone + Send + Serialize + DeserializeOwned + Unpin + Sync,
 {
     /// update if exist, create or else
     async fn save_generic(
@@ -49,6 +49,14 @@ where
             .await?;
         Ok(())
     }
+
+    async fn find_by_id(
+        id: &str,
+        collection: &Collection<Self>,
+    ) -> Result<Option<Self>, mongodb::error::Error> {
+        collection.find_one(doc! {"_id": id}, None).await
+    }
+
 
     fn id(&self) -> &str;
 }

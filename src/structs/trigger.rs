@@ -31,13 +31,13 @@ impl Trigger {
     }
 
     pub async fn init(&self, db: &Database) -> Result<(), Box<dyn Error>> {
-        self.action.init(db).await
+        self.action.init(db, &self.id, self.expiry).await
     }
 
-    pub async fn trigger(id: &str, db: &Database) -> Result<(), Box<dyn Error>> {
+    pub async fn trigger(&self, db: &Database) -> Result<(), Box<dyn Error>> {
         let triggers = get_triggers(db);
         let trigger = triggers
-            .find_one_and_delete(doc! {"_id": id}, None)
+            .find_one_and_delete(doc! {"_id": &self.id}, None)
             .await?
             .ok_or(GMError::TriggerNotFound)?;
 
@@ -45,7 +45,7 @@ impl Trigger {
             return Err(GMError::TriggerNotFound.into());
         }
 
-        trigger.action.trigger(db).await
+        trigger.action.trigger(db, &trigger.id, trigger.expiry).await
     }
 
     pub fn is_invalid(&self) -> bool {

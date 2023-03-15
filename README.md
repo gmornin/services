@@ -7,7 +7,7 @@ It can also be ran as a binary for quick testing.
 - [x] Account creation
 - [x] Checking passwords
 - [x] Trigger actions
-- [ ] Email verification
+- [x] Email verification
 - [ ] Changing email address/password/username
 
 ## Definitions
@@ -60,3 +60,7 @@ Reset's account token.
 	"token" String
 }
 ```
+
+### [Get] `/api/v1/triggers/use/{id}`
+
+Runs a trigger (e.g. email verification)

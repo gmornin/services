@@ -71,13 +71,6 @@ impl Account {
             .await
     }
 
-    pub async fn find_by_id(
-        id: &str,
-        collection: &Collection<Self>,
-    ) -> Result<Option<Self>, mongodb::error::Error> {
-        collection.find_one(doc! {"_id": id}, None).await
-    }
-
     pub async fn find_by_email(
         email: &str,
         collection: &Collection<Self>,
@@ -100,9 +93,9 @@ impl Account {
         collection: &Collection<Self>,
     ) -> Result<Option<Self>, mongodb::error::Error> {
         match identifier_type {
-            IdentifierType::Id => Account::find_by_id(&identifier, &collection).await,
-            IdentifierType::Email => Account::find_by_email(&identifier, &collection).await,
-            IdentifierType::Username => Account::find_by_username(identifier, &collection).await,
+            IdentifierType::Id => Account::find_by_id(&identifier, collection).await,
+            IdentifierType::Email => Account::find_by_email(&identifier, collection).await,
+            IdentifierType::Username => Account::find_by_username(identifier, collection).await,
         }
     }
 }

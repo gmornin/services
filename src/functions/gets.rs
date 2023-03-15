@@ -29,6 +29,7 @@ pub fn get_accounts(db: &Database) -> Collection<Account> {
     db.collection("accounts")
 }
 
+/// Gets `triggers` collection
 pub fn get_triggers(db: &Database) -> Collection<Trigger> {
     db.collection("triggers")
 }
