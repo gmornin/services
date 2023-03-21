@@ -15,7 +15,7 @@ enum Responses {
     #[serde(rename = "error")]
     Error { kind: ErrorKind },
     #[serde(rename = "created")]
-    Created { id: String },
+    Created { id: String, token: String },
     #[serde(rename = "deleted")]
     Deleted,
     #[serde(rename = "token")]

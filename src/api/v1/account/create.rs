@@ -64,5 +64,5 @@ async fn create_task(
 
     account.save_create(&accounts).await?;
 
-    Ok(Responses::Created { id: account.id })
+    Ok(Responses::Created { id: account.id, token: account.token })
 }
