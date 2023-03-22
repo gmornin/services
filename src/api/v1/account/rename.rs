@@ -5,13 +5,13 @@ use actix_web::{
     web::{Data, Json},
 };
 use mongodb::Database;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 use super::{ErrorKind, Responses};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct RenameAccount {
     pub token: String,
     pub new: String,
@@ -20,7 +20,7 @@ struct RenameAccount {
 #[post("/rename")]
 async fn rename(post: Json<RenameAccount>, db: Data<Database>) -> Json<Responses> {
     match rename_task(post, db).await {
-        Ok(res) => Json(res), 
+        Ok(res) => Json(res),
         Err(e) => Json(Responses::Error {
             kind: match e.downcast::<ErrorKind>() {
                 Ok(downcasted) => *downcasted,
@@ -37,14 +37,15 @@ async fn rename_task(
     let post = post.into_inner();
     let accounts = get_accounts(&db);
 
-    let mut account = match Account::find_by_token(&post.token, &accounts)
-    .await?
-    {
+    let mut account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
         None => return Err(ErrorKind::InvalidToken.into()),
     };
 
-    if Account::find_by_username(post.new.clone(), &accounts).await?.is_some() {
+    if Account::find_by_username(post.new.clone(), &accounts)
+        .await?
+        .is_some()
+    {
         return Err(ErrorKind::UsernameTaken.into());
     }
 

@@ -1,5 +1,5 @@
 use chrono::Utc;
-use mongodb::{bson::doc, Collection, Database};
+use mongodb::{bson::doc, Collection};
 use serde::{Deserialize, Serialize};
 
 use crate::{functions::*, structs::*, traits::*};

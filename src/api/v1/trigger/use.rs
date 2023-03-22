@@ -2,12 +2,12 @@ use std::error::Error;
 
 use actix_web::{
     get,
-    web::{Data, Path, Json},
+    web::{Data, Json, Path},
 };
 use mongodb::Database;
 
+use super::{ErrorKind, Responses};
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
-use super::{Responses, ErrorKind};
 
 #[get("/use/{id}")]
 async fn r#use(id: Path<String>, db: Data<Database>) -> Json<Responses> {
@@ -22,11 +22,7 @@ async fn r#use(id: Path<String>, db: Data<Database>) -> Json<Responses> {
     }
 }
 
-async fn use_task(
-    id: &str,
-    db: Data<Database>,
-) -> Result<Responses, Box<dyn Error>> {
-
+async fn use_task(id: &str, db: Data<Database>) -> Result<Responses, Box<dyn Error>> {
     let triggers = get_triggers(&db);
     let trigger = match Trigger::find_by_id(id, &triggers).await? {
         Some(trigger) => trigger,
@@ -37,7 +33,7 @@ async fn use_task(
         trigger.delete(&triggers).await?;
         return Err(ErrorKind::NotFound.into());
     }
-    
+
     trigger.trigger(&db).await?;
 
     Ok(Responses::Triggered)

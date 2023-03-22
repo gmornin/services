@@ -1,3 +1,5 @@
+#[allow(private_in_public)]
+
 pub mod api;
 pub mod functions;
 pub mod structs;
@@ -6,6 +8,7 @@ pub mod traits;
 mod values;
 pub use values::*;
 
+pub use actix_multipart;
 pub use actix_web;
 pub use async_trait;
 pub use chrono;

@@ -45,7 +45,10 @@ impl Trigger {
             return Err(GMError::TriggerNotFound.into());
         }
 
-        trigger.action.trigger(db, &trigger.id, trigger.expiry).await
+        trigger
+            .action
+            .trigger(db, &trigger.id, trigger.expiry)
+            .await
     }
 
     pub fn is_invalid(&self) -> bool {

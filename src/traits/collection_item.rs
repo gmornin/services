@@ -57,6 +57,5 @@ where
         collection.find_one(doc! {"_id": id}, None).await
     }
 
-
     fn id(&self) -> &str;
 }

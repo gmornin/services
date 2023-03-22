@@ -5,13 +5,13 @@ use actix_web::{
     web::{Data, Json},
 };
 use mongodb::Database;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 use super::{ErrorKind, Responses};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct CreateAccount {
     pub username: String,
     pub email: String,
@@ -64,5 +64,8 @@ async fn create_task(
 
     account.save_create(&accounts).await?;
 
-    Ok(Responses::Created { id: account.id, token: account.token })
+    Ok(Responses::Created {
+        id: account.id,
+        token: account.token,
+    })
 }

@@ -5,13 +5,13 @@ use actix_web::{
     web::{Data, Json},
 };
 use mongodb::Database;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{functions::*, structs::*, *};
 
 use super::{ErrorKind, Responses};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct GetToken {
     pub identifier: String,
     pub identifier_type: IdentifierType,

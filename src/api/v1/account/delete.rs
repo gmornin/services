@@ -5,13 +5,13 @@ use actix_web::{
     web::{Data, Json},
 };
 use mongodb::Database;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 use super::{ErrorKind, Responses};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct DeleteAccount {
     pub token: String,
 }
@@ -36,9 +36,7 @@ async fn delete_task(
     let post = post.into_inner();
     let accounts = get_accounts(&db);
 
-    let account = match Account::find_by_token(&post.token, &accounts)
-    .await?
-    {
+    let account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
         None => return Err(ErrorKind::InvalidToken.into()),
     };
