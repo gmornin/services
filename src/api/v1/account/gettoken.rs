@@ -7,9 +7,8 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*, *, api::v1::*};
 
-use super::{ErrorKind, Responses};
 
 #[derive(Deserialize)]
 struct GetToken {
@@ -19,22 +18,14 @@ struct GetToken {
 }
 
 #[post("/gettoken")]
-async fn get_token(post: Json<GetToken>, db: Data<Database>) -> Json<Responses> {
-    match get_token_task(post, db).await {
-        Ok(res) => Json(res),
-        Err(e) => Json(Responses::Error {
-            kind: match e.downcast::<ErrorKind>() {
-                Ok(downcasted) => *downcasted,
-                Err(e) => ErrorKind::External(e.to_string()),
-            },
-        }),
-    }
+async fn get_token(post: Json<GetToken>, db: Data<Database>) -> Json<GMResponses> {
+    Json(to_res(get_token_task(post, db).await))
 }
 
 async fn get_token_task(
     post: Json<GetToken>,
     db: Data<Database>,
-) -> Result<Responses, Box<dyn Error>> {
+) -> Result<GMResponses, Box<dyn Error>> {
     let post = post.into_inner();
     let accounts = get_accounts(&db);
 
@@ -46,14 +37,14 @@ async fn get_token_task(
     .await?
     {
         Some(account) => account,
-        None => return Err(ErrorKind::NoSuchUser.into()),
+        None => return Err(GMError::NoSuchUser.into()),
     };
 
     if !account.password_matches(&post.password) {
-        return Err(ErrorKind::PasswordIncorrect.into());
+        return Err(GMError::PasswordIncorrect.into());
     }
 
-    Ok(Responses::GetToken {
-        token: account.token.clone(),
+    Ok(GMResponses::GetToken {
+        token: account.token,
     })
 }

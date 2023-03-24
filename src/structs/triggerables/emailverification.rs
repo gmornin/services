@@ -1,7 +1,6 @@
 use crate::{
     functions::get_accounts,
-    structs::GMError,
-    traits::{CollectionItem, Triggerable},
+    traits::{CollectionItem, Triggerable}, api::v1::GMError,
 };
 use async_trait::async_trait;
 use lettre::{
@@ -56,7 +55,7 @@ impl Triggerable for EmailVerification {
         let mut account = accounts
             .find_one(doc! {"_id": &self.id}, None)
             .await?
-            .ok_or(GMError::UserNotFound)?;
+            .ok_or(GMError::NoSuchUser)?;
 
         if account.email != self.email {
             return Err(GMError::EmailMismatch.into());

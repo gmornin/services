@@ -7,9 +7,7 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
-
-use super::{ErrorKind, Responses};
+use crate::{functions::*, structs::*, traits::CollectionItem, *, api::v1::*};
 
 #[derive(Deserialize)]
 struct RenameAccount {
@@ -18,39 +16,31 @@ struct RenameAccount {
 }
 
 #[post("/rename")]
-async fn rename(post: Json<RenameAccount>, db: Data<Database>) -> Json<Responses> {
-    match rename_task(post, db).await {
-        Ok(res) => Json(res),
-        Err(e) => Json(Responses::Error {
-            kind: match e.downcast::<ErrorKind>() {
-                Ok(downcasted) => *downcasted,
-                Err(e) => ErrorKind::External(e.to_string()),
-            },
-        }),
-    }
+async fn rename(post: Json<RenameAccount>, db: Data<Database>) -> Json<GMResponses> {
+    Json(to_res(rename_task(post, db).await))
 }
 
 async fn rename_task(
     post: Json<RenameAccount>,
     db: Data<Database>,
-) -> Result<Responses, Box<dyn Error>> {
+) -> Result<GMResponses, Box<dyn Error>> {
     let post = post.into_inner();
     let accounts = get_accounts(&db);
 
     let mut account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
-        None => return Err(ErrorKind::InvalidToken.into()),
+        None => return Err(GMError::InvalidToken.into()),
     };
 
     if Account::find_by_username(post.new.clone(), &accounts)
         .await?
         .is_some()
     {
-        return Err(ErrorKind::UsernameTaken.into());
+        return Err(GMError::UsernameTaken.into());
     }
 
     account.username = post.new;
     account.save_replace(&accounts).await?;
 
-    Ok(Responses::Deleted)
+    Ok(GMResponses::Deleted)
 }

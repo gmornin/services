@@ -1,5 +1,5 @@
+use crate::api::v1::GMError;
 use crate::functions::get_triggers;
-use crate::structs::GMError;
 use crate::traits::{CollectionItem, Triggerable};
 use chrono::Utc;
 use mongodb::{bson::doc, Database};

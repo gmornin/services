@@ -6,10 +6,9 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
-use tokio::{fs::{OpenOptions, self}, io::AsyncWriteExt};
+use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 
-use super::*;
-use crate::{functions::{get_accounts, bytes_from_multipart}, structs::Account};
+use crate::{functions::{get_accounts, bytes_from_multipart, to_res}, structs::Account, api::v1::*};
 
 #[derive(Deserialize)]
 struct StaticPath {
@@ -22,27 +21,22 @@ pub async fn overwrite(
     payload: Multipart,
     path: Path<StaticPath>,
     db: Data<Database>,
-) -> Json<Responses> {
-    Json(match overwrite_task(payload, &path.path, &path.token, &db).await {
-        Ok(res) => res,
-        Err(e) => {
-            Responses::Error { kind: ErrorKind::External(e.to_string()) }
-        },
-    })
+) -> Json<GMResponses> {
+    Json(to_res(overwrite_task(payload, &path.path, &path.token, &db).await))
 }
 
-async fn overwrite_task(payload: Multipart, path: &str, token: &str, db: &Database) -> Result<Responses, Box<dyn Error>> {
-    let accounts = get_accounts(&db);
+async fn overwrite_task(payload: Multipart, path: &str, token: &str, db: &Database) -> Result<GMResponses, Box<dyn Error>> {
+    let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
-        None => return Ok(Responses::Error { kind: ErrorKind::InvalidToken }),
-    };
+        None => return Ok(GMResponses::Error { kind: GMError::InvalidToken }),
+    }; 
 
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
     if !path_buf.exists() {
-        return Err(ErrorKind::NotFound.into());
-    }
+        return Err(GMError::FileNotFound.into());
+    } 
 
     let mut file = OpenOptions::new()
         .write(true)
@@ -52,10 +46,10 @@ async fn overwrite_task(payload: Multipart, path: &str, token: &str, db: &Databa
     let data = bytes_from_multipart(payload).await?;
 
     if let Err(e) = file.write_all(&data).await {
-        return Ok(Responses::Error { kind: ErrorKind::FsError(e.to_string()) })
-    }
+        return Ok(GMResponses::Error { kind: GMError::FsError(e.to_string()) })
+    } 
 
-    Ok(Responses::Overwritten {
+    Ok(GMResponses::Overwritten {
         path: format!("/{}/{}", account.id, path),
     })
 }

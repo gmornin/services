@@ -7,9 +7,7 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
-
-use super::{ErrorKind, Responses};
+use crate::{functions::*, structs::*, traits::CollectionItem, *, api::v1::*};
 
 #[derive(Deserialize)]
 struct RegenerateToken {
@@ -19,22 +17,14 @@ struct RegenerateToken {
 }
 
 #[post("/regeneratetoken")]
-async fn regenerate_token(post: Json<RegenerateToken>, db: Data<Database>) -> Json<Responses> {
-    match regenerate_token_task(post, db).await {
-        Ok(res) => Json(res),
-        Err(e) => Json(Responses::Error {
-            kind: match e.downcast::<ErrorKind>() {
-                Ok(downcasted) => *downcasted,
-                Err(e) => ErrorKind::External(e.to_string()),
-            },
-        }),
-    }
+async fn regenerate_token(post: Json<RegenerateToken>, db: Data<Database>) -> Json<GMResponses> {
+    Json(to_res(regenerate_token_task(post, db).await))
 }
 
 async fn regenerate_token_task(
     post: Json<RegenerateToken>,
     db: Data<Database>,
-) -> Result<Responses, Box<dyn Error>> {
+) -> Result<GMResponses, Box<dyn Error>> {
     let post = post.into_inner();
     let accounts = get_accounts(&db);
 
@@ -46,17 +36,17 @@ async fn regenerate_token_task(
     .await?
     {
         Some(account) => account,
-        None => return Err(ErrorKind::NoSuchUser.into()),
+        None => return Err(GMError::NoSuchUser.into()),
     };
 
     if !account.password_matches(&post.password) {
-        return Err(ErrorKind::PasswordIncorrect.into());
+        return Err(GMError::PasswordIncorrect.into());
     }
 
     account.regeneratetoken();
     account.save_replace(&accounts).await?;
 
-    Ok(Responses::RegenerateToken {
+    Ok(GMResponses::RegenerateToken {
         token: account.token.clone(),
     })
 }

@@ -7,9 +7,7 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
-
-use super::{ErrorKind, Responses};
+use crate::{functions::*, structs::*, traits::CollectionItem, *, api::v1::*};
 
 #[derive(Deserialize)]
 struct CreateAccount {
@@ -19,22 +17,14 @@ struct CreateAccount {
 }
 
 #[post("/create")]
-async fn create(post: Json<CreateAccount>, db: Data<Database>) -> Json<Responses> {
-    match create_task(post, db).await {
-        Ok(res) => Json(res),
-        Err(e) => Json(Responses::Error {
-            kind: match e.downcast::<ErrorKind>() {
-                Ok(downcasted) => *downcasted,
-                Err(e) => ErrorKind::External(e.to_string()),
-            },
-        }),
-    }
+async fn create(post: Json<CreateAccount>, db: Data<Database>) -> Json<GMResponses> {
+    Json(to_res(create_task(post, db).await))
 }
 
 async fn create_task(
     post: Json<CreateAccount>,
     db: Data<Database>,
-) -> Result<Responses, Box<dyn Error>> {
+) -> Result<GMResponses, Box<dyn Error>> {
     let post = post.into_inner();
     let accounts = get_accounts(&db);
     let triggers = get_triggers(&db);
@@ -43,14 +33,14 @@ async fn create_task(
         .await?
         .is_some()
     {
-        return Err(ErrorKind::UsernameTaken.into());
+        return Err(GMError::UsernameTaken.into());
     }
 
     if Account::find_by_email(&post.email, &accounts)
         .await?
         .is_some()
     {
-        return Err(ErrorKind::EmailTaken.into());
+        return Err(GMError::EmailTaken.into());
     }
 
     let account = Account::new(post.username, &post.password, &post.email);
@@ -64,7 +54,7 @@ async fn create_task(
 
     account.save_create(&accounts).await?;
 
-    Ok(Responses::Created {
+    Ok(GMResponses::Created {
         id: account.id,
         token: account.token,
     })

@@ -7,9 +7,8 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
+use crate::{functions::*, structs::*, traits::CollectionItem, *, api::v1::*};
 
-use super::{ErrorKind, Responses};
 
 #[derive(Deserialize)]
 struct DeleteAccount {
@@ -17,31 +16,23 @@ struct DeleteAccount {
 }
 
 #[post("/delete")]
-async fn delete(post: Json<DeleteAccount>, db: Data<Database>) -> Json<Responses> {
-    match delete_task(post, db).await {
-        Ok(res) => Json(res),
-        Err(e) => Json(Responses::Error {
-            kind: match e.downcast::<ErrorKind>() {
-                Ok(downcasted) => *downcasted,
-                Err(e) => ErrorKind::External(e.to_string()),
-            },
-        }),
-    }
+async fn delete(post: Json<DeleteAccount>, db: Data<Database>) -> Json<GMResponses> {
+    Json(to_res(delete_task(post, db).await))
 }
 
 async fn delete_task(
     post: Json<DeleteAccount>,
     db: Data<Database>,
-) -> Result<Responses, Box<dyn Error>> {
+) -> Result<GMResponses, Box<dyn Error>> {
     let post = post.into_inner();
     let accounts = get_accounts(&db);
 
     let account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
-        None => return Err(ErrorKind::InvalidToken.into()),
+        None => return Err(GMError::InvalidToken.into()),
     };
 
     account.delete(&accounts).await?;
 
-    Ok(Responses::Deleted)
+    Ok(GMResponses::Deleted)
 }
