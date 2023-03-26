@@ -31,15 +31,19 @@ pub enum GMError {
     #[serde(rename = "file not found")]
     FileNotFound,
     #[serde(rename = "filesystem error")]
-    FsError(String),
+    FsError { content: String },
+    #[serde(rename = "file too large")]
+    FileTooLarge,
 
     #[serde(rename = "external")]
-    External(String),
+    External { content: String },
 }
 
 impl ErrorTrait for GMError {
     fn external(e: Box<dyn Error>) -> Self {
-        Self::External(e.to_string())
+        Self::External {
+            content: e.to_string(),
+        }
     }
 }
 

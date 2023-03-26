@@ -6,7 +6,7 @@ use actix_web::{
 };
 use mongodb::Database;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *, api::v1::*};
+use crate::{api::v1::*, functions::*, structs::*, traits::CollectionItem, *};
 
 #[get("/use/{id}")]
 async fn r#use(id: Path<String>, db: Data<Database>) -> Json<GMResponses> {
@@ -18,12 +18,12 @@ async fn use_task(id: &str, db: Data<Database>) -> Result<GMResponses, Box<dyn E
     let trigger = match Trigger::find_by_id(id, &triggers).await? {
         Some(trigger) => trigger,
         None => return Err(GMError::TriggerNotFound.into()),
-    }; 
+    };
 
     if trigger.is_invalid() {
         trigger.delete(&triggers).await?;
         return Err(GMError::TriggerNotFound.into());
-    } 
+    }
 
     trigger.trigger(&db).await?;
 

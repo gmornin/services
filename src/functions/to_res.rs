@@ -1,8 +1,9 @@
-use std::error::Error;
 use crate::traits::*;
+use std::error::Error;
 
 pub fn to_res<R: ResTrait>(res: Result<R, Box<dyn Error>>) -> R
-where <R as ResTrait>::Error: 'static
+where
+    <R as ResTrait>::Error: 'static,
 {
     match res {
         Ok(res) => res,
@@ -21,5 +22,4 @@ where <R as ResTrait>::Error: 'static
         //     },
         // },
     }
-
-} 
+}

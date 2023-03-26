@@ -6,8 +6,6 @@ mod gettoken;
 mod regeneratetoken;
 mod rename;
 
-
-
 pub fn scope() -> Scope {
     Scope::new("/account")
         .service(create::create)

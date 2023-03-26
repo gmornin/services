@@ -1,8 +1,8 @@
 pub mod account;
-pub mod trigger;
-pub mod usercontent;
 mod error;
 mod responses;
+pub mod storage;
+pub mod trigger;
 pub use error::*;
 pub use responses::*;
 
@@ -12,5 +12,5 @@ pub fn scope() -> Scope {
     Scope::new("/v1")
         .service(account::scope())
         .service(trigger::scope())
-        .service(usercontent::scope())
+        .service(storage::scope())
 }

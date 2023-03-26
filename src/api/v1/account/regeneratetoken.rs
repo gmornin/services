@@ -7,7 +7,7 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *, api::v1::*};
+use crate::{api::v1::*, functions::*, structs::*, traits::CollectionItem, *};
 
 #[derive(Deserialize)]
 struct RegenerateToken {

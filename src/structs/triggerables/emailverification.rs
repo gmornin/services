@@ -1,6 +1,7 @@
 use crate::{
+    api::v1::GMError,
     functions::get_accounts,
-    traits::{CollectionItem, Triggerable}, api::v1::GMError,
+    traits::{CollectionItem, Triggerable},
 };
 use async_trait::async_trait;
 use lettre::{

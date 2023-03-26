@@ -1,5 +1,4 @@
 #[allow(private_in_public)]
-
 pub mod api;
 pub mod functions;
 pub mod structs;

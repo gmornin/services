@@ -1,6 +1,9 @@
+use std::path::PathBuf;
+
 use chrono::Utc;
 use mongodb::{bson::doc, Collection};
 use serde::{Deserialize, Serialize};
+use tokio::io;
 
 use crate::{functions::*, structs::*, traits::*};
 
@@ -101,6 +104,30 @@ impl Account {
 }
 
 impl Account {
+    pub fn storage_limits(&self, limits: &StorageLimits) -> u64 {
+        limits._1
+    }
+
+    pub async fn exceeds_limit(
+        &self,
+        limits: &StorageLimits,
+        extra: Option<u64>,
+        remove: Option<u64>,
+    ) -> io::Result<bool> {
+        if extra > remove {
+            Ok(
+                dir_size(&PathBuf::from(&format!("usercontent/{}", self.id))).await?
+                    + extra.unwrap_or_default()
+                    - remove.unwrap_or_default()
+                    > self.storage_limits(limits),
+            )
+        } else {
+            Ok(true)
+        }
+    }
+}
+
+impl Account {
     fn hash_with_id(password: &str, id: &str) -> String {
         hash(password, vec![id])
     }
@@ -137,4 +164,9 @@ pub enum IdentifierType {
     Id,
     #[serde(rename = "username")]
     Username,
+}
+
+#[derive(Clone, Copy)]
+pub struct StorageLimits {
+    pub _1: u64,
 }

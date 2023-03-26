@@ -1,7 +1,7 @@
 use actix_multipart::{Multipart, MultipartError};
 use futures_util::TryStreamExt;
 
-pub async fn bytes_from_multipart(mut payload: Multipart) -> Result<Vec<u8>, MultipartError>{
+pub async fn bytes_from_multipart(mut payload: Multipart) -> Result<Vec<u8>, MultipartError> {
     let mut file_data: Vec<u8> = Vec::new();
     // let mut layout: Option<String> = Some(String::from("simple"));
     #[allow(clippy::single_match)]

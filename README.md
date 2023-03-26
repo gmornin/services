@@ -64,3 +64,13 @@ Reset's account token.
 ### [Get] `/api/v1/triggers/use/{id}`
 
 Runs a trigger (e.g. email verification)
+
+### [Post] `/api/v1/storage/{token}/overwrite/{path}`
+
+Overwrites an existing file
+
+Example
+
+```sh
+curl http://localhost:8080/api/v1/storage/{id}/overwrite/test.txt -X POST -F 'file=@Cargo.toml'
+```
