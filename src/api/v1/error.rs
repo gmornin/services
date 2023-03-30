@@ -25,7 +25,7 @@ pub enum GMError {
     #[serde(rename = "trigger not found")]
     TriggerNotFound,
 
-    // usercontent
+    // storage
     #[serde(rename = "path occupied")]
     PathOccupied,
     #[serde(rename = "file not found")]

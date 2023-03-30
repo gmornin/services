@@ -13,7 +13,7 @@ use tokio::{
 
 use crate::{
     api::v1::*,
-    functions::{bytes_from_multipart, file_size, get_accounts, to_res},
+    functions::{bytes_from_multipart, get_accounts, to_res},
     structs::{Account, StorageLimits, Visibilities},
 };
 
@@ -23,8 +23,8 @@ struct StaticPath {
     token: String,
 }
 
-#[post("/overwrite/{path:.*}")]
-pub async fn overwrite(
+#[post("/write_new/{path:.*}")]
+pub async fn write_new(
     payload: Multipart,
     path: Path<StaticPath>,
     req: HttpRequest,
@@ -32,11 +32,11 @@ pub async fn overwrite(
     storage_limits: Data<StorageLimits>,
 ) -> Json<GMResponses> {
     Json(to_res(
-        overwrite_task(payload, &path.path, &path.token, req, &db, &storage_limits).await,
+        write_new_task(payload, &path.path, &path.token, req, &db, &storage_limits).await,
     ))
 }
 
-async fn overwrite_task(
+async fn write_new_task(
     payload: Multipart,
     path: &str,
     token: &str,
@@ -45,7 +45,7 @@ async fn overwrite_task(
     storage_limits: &StorageLimits,
 ) -> Result<GMResponses, Box<dyn Error>> {
     let accounts = get_accounts(db);
-    let account = match Account::find_by_token(token, &accounts).await.unwrap() {
+    let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(GMResponses::Error {
@@ -56,8 +56,8 @@ async fn overwrite_task(
 
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
-    if !try_exists(&path_buf).await.unwrap() {
-        return Err(GMError::FileNotFound.into());
+    if try_exists(&path_buf).await? {
+        return Err(GMError::PathOccupied.into());
     }
 
     if account
@@ -67,32 +67,27 @@ async fn overwrite_task(
                 req.headers()
                     .get("content-length")
                     .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .parse::<u64>()
-                    .unwrap(),
+                    .to_str()?
+                    .parse::<u64>()?,
             ),
-            Some(file_size(&path_buf).await.unwrap()),
+            None,
         )
-        .await
-        .unwrap()
+        .await?
     {
         return Err(GMError::FileTooLarge.into());
     }
 
-    Visibilities::check_all_dirs(&path_buf.parent().unwrap())
-        .await
-        .unwrap();
+    Visibilities::check_all_dirs(&path_buf.parent().unwrap()).await?;
 
     let mut file = OpenOptions::new()
+        .create(true)
         .write(true)
         .open(&path_buf)
-        .await
-        .unwrap();
+        .await?;
 
-    let data = bytes_from_multipart(payload).await.unwrap();
+    let data = bytes_from_multipart(payload).await?;
 
-    file.write_all(&data).await.unwrap();
+    file.write_all(&data).await?;
 
     Ok(GMResponses::Overwritten {
         path: format!("/{}/{}", account.id, path),
