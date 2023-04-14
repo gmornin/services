@@ -12,9 +12,9 @@ use tokio::{
 };
 
 use crate::{
-    api::v1::*,
-    functions::{bytes_from_multipart, file_size, get_accounts, to_res},
-    structs::{Account, StorageLimits, Visibilities},
+    api::services::v1::*,
+    functions::*,
+    structs::*,
 };
 
 #[derive(Deserialize)]
@@ -79,10 +79,6 @@ async fn overwrite_task(
     {
         return Err(GMError::FileTooLarge.into());
     }
-
-    Visibilities::check_all_dirs(&path_buf.parent().unwrap())
-        .await
-        .unwrap();
 
     let mut file = OpenOptions::new()
         .write(true)

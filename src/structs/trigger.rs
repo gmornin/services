@@ -1,4 +1,4 @@
-use crate::api::v1::GMError;
+use crate::api::services::v1::GMError;
 use crate::functions::get_triggers;
 use crate::traits::{CollectionItem, Triggerable};
 use chrono::Utc;

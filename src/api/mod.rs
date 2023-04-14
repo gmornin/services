@@ -1,7 +1,7 @@
 use actix_web::Scope;
 
-pub mod v1;
+pub mod services;
 
 pub fn scope() -> Scope {
-    Scope::new("/api").service(v1::scope())
+    Scope::new("/api").service(services::scope())
 }

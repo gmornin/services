@@ -34,6 +34,8 @@ pub enum GMError {
     FsError { content: String },
     #[serde(rename = "file too large")]
     FileTooLarge,
+    #[serde(rename = "no parent")]
+    NoParent,
 
     #[serde(rename = "external")]
     External { content: String },

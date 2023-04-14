@@ -8,9 +8,9 @@ use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use crate::{
-    api::v1::*,
-    functions::{get_accounts, to_res},
-    structs::{Account, Visibilities},
+    api::services::v1::*,
+    functions::*,
+    structs::*,
 };
 
 #[derive(Deserialize)]
@@ -19,8 +19,6 @@ struct StaticPath {
     token: String,
 }
 
-#[routes]
-#[post("/mkdir/{path:.*}")]
 #[get("/mkdir/{path:.*}")]
 pub async fn mkdir(path: Path<StaticPath>, db: Data<Database>) -> Json<GMResponses> {
     Json(to_res(mkdir_task(&path.path, &path.token, &db).await))
@@ -43,9 +41,8 @@ async fn mkdir_task(path: &str, token: &str, db: &Database) -> Result<GMResponse
         return Err(GMError::PathOccupied.into());
     }
 
-    fs::create_dir_all(&path_buf).await?;
-
-    Visibilities::check_all_dirs(&path_buf).await?;
+    // fs::create_dir_all(&path_buf).await?;
+    fs::create_dir(&path_buf).await?;
 
     Ok(GMResponses::Overwritten {
         path: format!("/{}/{}", account.id, path),

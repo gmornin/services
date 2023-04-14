@@ -28,6 +28,11 @@ pub enum GMResponses {
     Overwritten { path: String },
     #[serde(rename = "dir content")]
     DirContent(HashMap<String, DirItem>),
+    #[serde(rename = "visibility changed")]
+    VisibilityChanged,
+
+    #[serde(rename = "nothing changed")]
+    NothingChanged,
 
     #[serde(rename = "error")]
     Error { kind: GMError },
@@ -45,4 +50,5 @@ impl ResTrait for GMResponses {
 pub struct DirItem {
     pub visibility: Visibility,
     pub is_file: bool,
+    pub name: String,
 }

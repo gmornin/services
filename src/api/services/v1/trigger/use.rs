@@ -6,7 +6,7 @@ use actix_web::{
 };
 use mongodb::Database;
 
-use crate::{api::v1::*, functions::*, structs::*, traits::CollectionItem, *};
+use crate::{api::services::v1::*, functions::*, structs::*, traits::CollectionItem, *};
 
 #[get("/use/{id}")]
 async fn r#use(id: Path<String>, db: Data<Database>) -> Json<GMResponses> {

@@ -7,7 +7,7 @@ use actix_web::{
 use mongodb::Database;
 use serde::Deserialize;
 
-use crate::{api::v1::*, functions::*, structs::*, traits::CollectionItem, *};
+use crate::{api::services::v1::*, functions::*, structs::*, traits::CollectionItem, *};
 
 #[derive(Deserialize)]
 struct CreateAccount {

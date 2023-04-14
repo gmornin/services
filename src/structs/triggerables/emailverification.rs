@@ -1,5 +1,5 @@
 use crate::{
-    api::v1::GMError,
+    api::services::v1::GMError,
     functions::get_accounts,
     traits::{CollectionItem, Triggerable},
 };

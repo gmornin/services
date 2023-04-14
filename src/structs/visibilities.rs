@@ -1,12 +1,12 @@
 use mongodb::bson;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, path::Path};
-use tokio::{fs::*, io::AsyncWriteExt};
+use tokio::{fs, io::AsyncWriteExt};
 
 pub const VISIBILITIES_BSON: &str = "visibility.bson";
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct Visibilities(HashMap<String, Visibility>);
+pub struct Visibilities(pub HashMap<String, ItemVisibility>);
 
 impl Visibilities {
     pub async fn check_all_dirs(path: &Path) -> Result<(), Box<dyn Error>> {
@@ -14,17 +14,17 @@ impl Visibilities {
         let take = ancestors.len() - 2;
         for path in ancestors.into_iter().take(take) {
             let path = path.join(VISIBILITIES_BSON);
-            if !try_exists(&path).await? {
+            if !fs::try_exists(&path).await? {
                 let doc = bson::to_document(&Visibilities::default())?;
                 let mut bytes = Vec::new();
                 doc.to_writer(&mut bytes)?;
-                let mut file = OpenOptions::new()
+                let mut file = fs::OpenOptions::new()
                     .write(true)
                     .create(true)
                     .truncate(true)
                     .open(path)
                     .await?;
-                file.write(&bytes).await?;
+                file.write_all(&bytes).await?;
             }
         }
 
@@ -33,7 +33,11 @@ impl Visibilities {
 
     pub async fn read_dir(path: &Path) -> Result<Visibilities, Box<dyn Error>> {
         let path = path.join(VISIBILITIES_BSON);
-        let bytes = read(path).await?;
+        if !fs::try_exists(&path).await? {
+            return Ok(Visibilities::default());
+        }
+
+        let bytes = fs::read(path).await?;
         let bson = bson::from_slice(&bytes)?;
         let visibilities: Visibilities = bson::from_bson(bson)?;
 
@@ -41,29 +45,72 @@ impl Visibilities {
     }
 
     pub async fn visibility(path: &Path) -> Result<Visibility, Box<dyn Error>> {
-        Self::check_all_dirs(path.parent().unwrap()).await?;
         let ancestors = path.ancestors().collect::<Vec<_>>();
         let take = ancestors.len() - 3;
-        for path in ancestors.into_iter().take(take) {
+        for (index, path) in ancestors.into_iter().take(take).enumerate() {
             println!("{}", path.as_os_str().to_str().unwrap());
-            let dir_visibilily = Self::read_dir(path.parent().unwrap())
+            let mut dir_visibilily = Self::read_dir(path.parent().unwrap())
                 .await?
                 .get(path.file_name().unwrap().to_str().unwrap());
-            if dir_visibilily != Visibility::Private {
+            if !dir_visibilily.inherited {
+                if index != 0 {
+                    dir_visibilily.inherited = true;
+                }
                 return Ok(dir_visibilily);
             }
         }
 
-        Ok(Visibility::Private)
+        Ok(Visibility::default())
     }
 
     pub fn get(&self, path: &str) -> Visibility {
-        self.0.get(path).copied().unwrap_or_default()
+        match self.0.get(path).copied() {
+            Some(visibility) => Visibility { inherited: false, visibility },
+            None => Visibility::default()
+        }
+    }
+
+    pub async fn save(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+        let path = path.join(VISIBILITIES_BSON);
+        let doc = bson::to_document(&self)?;
+        let mut bytes = Vec::new();
+        doc.to_writer(&mut bytes)?;
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(path)
+            .await?;
+        file.write_all(&bytes).await?;
+
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy)]
+pub struct Visibility {
+    pub inherited: bool,
+    pub visibility: ItemVisibility,
+}
+
+impl Visibility {
+    pub fn overwrite_if_inherited(mut self, dir_visibilily: Self) -> Self {
+        if self.inherited {
+            self.visibility = dir_visibilily.visibility;
+        }
+
+        self
+    }
+}
+
+impl Default for Visibility {
+    fn default() -> Self {
+        Self { inherited: true, visibility: ItemVisibility::Private }
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
-pub enum Visibility {
+pub enum ItemVisibility {
     #[serde(rename = "hidden")]
     Hidden,
     #[serde(rename = "public")]
@@ -72,18 +119,8 @@ pub enum Visibility {
     Private,
 }
 
-impl Default for Visibility {
+impl Default for ItemVisibility {
     fn default() -> Self {
         Self::Private
-    }
-}
-
-impl Visibility {
-    pub fn overwrite_if_private(self, overwrite: &Visibility) -> Visibility {
-        if self == Self::Private {
-            *overwrite
-        } else {
-            self
-        }
     }
 }
