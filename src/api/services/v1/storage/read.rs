@@ -11,8 +11,8 @@ use tokio::fs::{self, try_exists};
 
 use crate::{
     api::services::v1::*,
-    functions::{get_accounts, to_res},
-    structs::{Account, Visibilities},
+    functions::*,
+    structs::*,
 };
 
 #[derive(Deserialize)]
@@ -35,7 +35,6 @@ async fn read_task(
     req: &HttpRequest,
     db: &Database,
 ) -> Result<HttpResponse, Box<dyn Error>> {
-    println!("{}", path);
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await.unwrap() {
         Some(account) => account,
@@ -55,7 +54,7 @@ async fn read_task(
         let items_visibilities = Visibilities::read_dir(&path_buf).await?;
 
         while let Some(entry) = dir_content.next_entry().await? {
-            if entry.path().extension().unwrap_or_default().to_str().unwrap() == "bson" {
+            if is_bson(&entry.path()) {
                 continue;
             }
 

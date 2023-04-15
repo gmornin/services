@@ -48,7 +48,6 @@ impl Visibilities {
         let ancestors = path.ancestors().collect::<Vec<_>>();
         let take = ancestors.len() - 3;
         for (index, path) in ancestors.into_iter().take(take).enumerate() {
-            println!("{}", path.as_os_str().to_str().unwrap());
             let mut dir_visibilily = Self::read_dir(path.parent().unwrap())
                 .await?
                 .get(path.file_name().unwrap().to_str().unwrap());

@@ -1,3 +1,4 @@
+
 use actix_web::{
     web::{Data, Json, Path},
     *,
@@ -19,12 +20,12 @@ struct StaticPath {
     token: String,
 }
 
-#[get("/mkdir/{path:.*}")]
-pub async fn mkdir(path: Path<StaticPath>, db: Data<Database>) -> Json<GMResponses> {
-    Json(to_res(mkdir_task(&path.path, &path.token, &db).await))
+#[get("/touch/{path:.*}")]
+pub async fn touch(path: Path<StaticPath>, db: Data<Database>) -> Json<GMResponses> {
+    Json(to_res(touch_task(&path.path, &path.token, &db).await))
 }
 
-async fn mkdir_task(path: &str, token: &str, db: &Database) -> Result<GMResponses, Box<dyn Error>> {
+async fn touch_task(path: &str, token: &str, db: &Database) -> Result<GMResponses, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
@@ -45,8 +46,7 @@ async fn mkdir_task(path: &str, token: &str, db: &Database) -> Result<GMResponse
         return Err(GMError::PathOccupied.into());
     }
 
-    // fs::create_dir_all(&path_buf).await?;
-    fs::create_dir(&path_buf).await?;
+    fs::File::create(path_buf).await?;
 
     Ok(GMResponses::FileItemCreated {
         path: format!("/{}/{}", account.id, path),

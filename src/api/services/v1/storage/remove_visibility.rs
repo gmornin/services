@@ -43,12 +43,12 @@ async fn remove_visibility_task(
         }
     };
 
-    let path = PathBuf::from(path);
-    if path.parent().is_none() {
-        return Err(GMError::NoParent.into());
+    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(path);
+
+    if !editable(&path_buf) {
+        return Err(GMError::NotEditable.into());
     }
 
-    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(path);
     let file_name = path_buf.file_name().unwrap().to_str().unwrap();
   
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;

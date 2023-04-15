@@ -18,6 +18,8 @@ pub enum GMResponses {
     GetToken { token: String },
     #[serde(rename = "regnerated")]
     RegenerateToken { token: String },
+    #[serde (rename = "renamed")]
+    Renamed,
 
     // trigger
     #[serde(rename = "triggered")]
@@ -30,6 +32,14 @@ pub enum GMResponses {
     DirContent(HashMap<String, DirItem>),
     #[serde(rename = "visibility changed")]
     VisibilityChanged,
+    #[serde(rename = "file item created")]
+    FileItemCreated { path: String },
+    #[serde(rename = "file item deleted")]
+    FileItemDeleted,
+    #[serde(rename = "copied")]
+    Copied { path: String },
+    #[serde(rename = "moved")]
+    Moved { path: String },
 
     #[serde(rename = "nothing changed")]
     NothingChanged,

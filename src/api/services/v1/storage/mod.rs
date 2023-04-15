@@ -6,6 +6,12 @@ mod mkdir;
 mod overwrite;
 mod read;
 mod write_new;
+mod delete;
+mod touch;
+mod copy;
+mod r#move;
+mod move_overwrite;
+mod copy_overwrite;
 
 pub fn scope() -> Scope {
     Scope::new("/storage/{token}")
@@ -15,4 +21,8 @@ pub fn scope() -> Scope {
         .service(mkdir::mkdir)
         .service(set_visibility::set_visibility)
         .service(remove_visibility::remove_visibility)
+        .service(delete::delete)
+        .service(touch::touch)
+        .service(copy::copy)
+        .service(r#move::r#move)
 }

@@ -4,7 +4,8 @@ use actix_web::{
 };
 use mongodb::Database;
 use serde::Deserialize;
-use std::{error::Error, path::PathBuf};
+use tokio::fs;
+use std::{error::Error, path::PathBuf, ffi::OsStr};
 
 
 use crate::{
@@ -20,26 +21,26 @@ struct StaticPath {
 }
 
 #[derive(Deserialize)]
-struct SetVisibility {
-    pub new: ItemVisibility,
+pub struct MoveFrom {
+    pub from: String,
 }
 
-#[post("/set_visibility/{path:.*}")]
-pub async fn set_visibility(
+#[post("/move/{path:.*}")]
+pub async fn r#move(
     path: Path<StaticPath>,
     db: Data<Database>,
-    post: Json<SetVisibility>
+    post: Json<MoveFrom>,
 ) -> Json<GMResponses> {
     Json(to_res(
-        set_visibility_task(&path.path, &path.token, &db, &post).await,
+        move_task(&path.path, &path.token, &db, &post).await,
     ))
 }
 
-async fn set_visibility_task(
+async fn move_task(
     path: &str,
     token: &str,
     db: &Database,
-    post: &SetVisibility
+    post: &MoveFrom,
 ) -> Result<GMResponses, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
@@ -57,16 +58,25 @@ async fn set_visibility_task(
         return Err(GMError::NotEditable.into());
     }
 
-    let file_name = path_buf.file_name().unwrap().to_str().unwrap();
-  
-    let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
-    match visibilities.0.get(file_name) {
-        Some(visibility) if visibility==&post.new => return Ok(GMResponses::NothingChanged),
-        _ => {
-            let _ = visibilities.0.insert(file_name.to_string(), post.new);
-        }
-    }
-    visibilities.save(path_buf.parent().unwrap()).await?;
+    let from_buf = PathBuf::from(format!("usercontent/{}/{}",account.id, post.from));
 
-    Ok(GMResponses::VisibilityChanged)
+    if from_buf.iter().any(|section| section == OsStr::new(".") || section == OsStr::new("..")) {
+        return Err(GMError::FileNotFound.into());
+    }
+
+    if !editable(&from_buf) {
+        return Err(GMError::NotEditable.into());
+    }
+
+    if fs::try_exists(&path_buf).await? {
+        return Err(GMError::PathOccupied.into());
+    }
+
+    if !fs::try_exists(&from_buf).await? {
+        return Err(GMError::FileNotFound.into());
+    }
+    
+    fs::rename(from_buf, path_buf).await?;
+
+    Ok(GMResponses::Moved { path: format!("/{}/{}", account.id, path) })
 }

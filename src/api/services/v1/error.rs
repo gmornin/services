@@ -36,6 +36,8 @@ pub enum GMError {
     FileTooLarge,
     #[serde(rename = "no parent")]
     NoParent,
+    #[serde(rename = "not editable")]
+    NotEditable,
 
     #[serde(rename = "external")]
     External { content: String },

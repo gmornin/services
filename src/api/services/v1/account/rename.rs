@@ -42,5 +42,5 @@ async fn rename_task(
     account.username = post.new;
     account.save_replace(&accounts).await?;
 
-    Ok(GMResponses::Deleted)
+    Ok(GMResponses::Renamed)
 }

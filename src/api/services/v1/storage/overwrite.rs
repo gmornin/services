@@ -56,6 +56,10 @@ async fn overwrite_task(
 
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
+    if !editable(&path_buf) {
+        return Err(GMError::NotEditable.into());
+    }
+
     if !try_exists(&path_buf).await.unwrap() {
         return Err(GMError::FileNotFound.into());
     }

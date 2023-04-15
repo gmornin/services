@@ -6,6 +6,8 @@ It can also be ran as a binary for quick testing.
 
 Moved to [github projects](https://github.com/orgs/GoodMorning-Network/projects/1)
 
+Docs has been in progress of making in `/docs`, this README will not be updated and can become inaccurate.
+
 ## Definitions
 
 ### IdentifierType

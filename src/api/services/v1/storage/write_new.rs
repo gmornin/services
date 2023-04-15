@@ -56,6 +56,10 @@ async fn write_new_task(
 
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
+    if !editable(&path_buf) {
+        return Err(GMError::NotEditable.into());
+    }
+
     if try_exists(&path_buf).await? {
         return Err(GMError::PathOccupied.into());
     }
@@ -87,7 +91,7 @@ async fn write_new_task(
 
     file.write_all(&data).await?;
 
-    Ok(GMResponses::Overwritten {
+    Ok(GMResponses::FileItemCreated {
         path: format!("/{}/{}", account.id, path),
     })
 }

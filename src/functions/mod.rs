@@ -12,3 +12,7 @@ mod to_res;
 pub use to_res::*;
 mod dir_size;
 pub use dir_size::*;
+mod editable;
+pub use editable::*;
+mod dir_operations;
+pub use dir_operations::*;
