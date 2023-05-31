@@ -64,8 +64,11 @@ impl Visibilities {
 
     pub fn get(&self, path: &str) -> Visibility {
         match self.0.get(path).copied() {
-            Some(visibility) => Visibility { inherited: false, visibility },
-            None => Visibility::default()
+            Some(visibility) => Visibility {
+                inherited: false,
+                visibility,
+            },
+            None => Visibility::default(),
         }
     }
 
@@ -91,6 +94,11 @@ pub struct Visibility {
     pub inherited: bool,
     pub visibility: ItemVisibility,
 }
+impl From<Visibility> for goodmorning_bindings::services::v1::Visibility {
+    fn from(value: Visibility) -> Self {
+        Self { inherited: value.inherited, visibility: value.visibility.into() }
+    }
+}
 
 impl Visibility {
     pub fn overwrite_if_inherited(mut self, dir_visibilily: Self) -> Self {
@@ -104,7 +112,10 @@ impl Visibility {
 
 impl Default for Visibility {
     fn default() -> Self {
-        Self { inherited: true, visibility: ItemVisibility::Private }
+        Self {
+            inherited: true,
+            visibility: ItemVisibility::Private,
+        }
     }
 }
 
@@ -116,6 +127,15 @@ pub enum ItemVisibility {
     Public,
     #[serde(rename = "private")]
     Private,
+}
+impl From<ItemVisibility> for goodmorning_bindings::services::v1::ItemVisibility {
+    fn from(value: ItemVisibility) -> Self {
+        match value {
+            ItemVisibility::Hidden => Self::Hidden,
+            ItemVisibility::Public => Self::Public,
+            ItemVisibility::Private => Self::Private
+        }
+    }
 }
 
 impl Default for ItemVisibility {

@@ -1,7 +1,15 @@
-use actix_web::{middleware::Logger, web::Data, App, HttpServer};
+use actix_extensible_rate_limit::{
+    backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder},
+    RateLimiter,
+};
+use actix_web::{
+    middleware::Logger,
+    web::{self, Data},
+    App, HttpServer,
+};
 use dotenv::dotenv;
 use goodmorning_services::{functions::*, structs::StorageLimits, *};
-use std::env;
+use std::{env, time::Duration};
 
 #[tokio::main]
 async fn main() {
@@ -26,16 +34,27 @@ async fn main() {
     println!("Starting server at {ip}:{port}");
 
     HttpServer::new(move || {
+        let backend = InMemoryBackend::builder().build();
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
+            .real_ip_key()
+            .build();
+        let middleware = RateLimiter::builder(backend, input).add_headers().build();
         App::new()
             .service(api::scope())
+            .route("/", web::get().to(pong))
             .wrap(Logger::default())
             .app_data(Data::new(db.clone()))
             .app_data(Data::new(EMAIL_VERIFICATION_DURATION))
             .app_data(Data::new(storage_limits))
+            .wrap(middleware)
     })
     .bind((ip, port))
     .expect("cannot bind to port")
     .run()
     .await
     .expect("server down");
+}
+
+async fn pong() -> &'static str {
+    "Pong!"
 }

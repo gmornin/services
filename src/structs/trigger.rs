@@ -1,7 +1,7 @@
-use crate::api::services::v1::GMError;
 use crate::functions::get_triggers;
 use crate::traits::{CollectionItem, Triggerable};
 use chrono::Utc;
+use goodmorning_bindings::services::v1::V1Error;
 use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -39,10 +39,10 @@ impl Trigger {
         let trigger = triggers
             .find_one_and_delete(doc! {"_id": &self.id}, None)
             .await?
-            .ok_or(GMError::TriggerNotFound)?;
+            .ok_or(V1Error::TriggerNotFound)?;
 
         if trigger.is_invalid() {
-            return Err(GMError::TriggerNotFound.into());
+            return Err(V1Error::TriggerNotFound.into());
         }
 
         trigger

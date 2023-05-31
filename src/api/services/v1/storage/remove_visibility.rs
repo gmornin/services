@@ -6,11 +6,7 @@ use mongodb::Database;
 use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 
-use crate::{
-    api::services::v1::*,
-    functions::*,
-    structs::*,
-};
+use crate::{functions::*, structs::*};
 
 #[derive(Deserialize)]
 struct StaticPath {
@@ -18,12 +14,14 @@ struct StaticPath {
     token: String,
 }
 
+use goodmorning_bindings::{
+    services::v1::{V1Error, V1Response},
+    traits::ResTrait,
+};
+
 #[get("/remove_visibility/{path:.*}")]
-pub async fn remove_visibility(
-    path: Path<StaticPath>,
-    db: Data<Database>,
-) -> Json<GMResponses> {
-    Json(to_res(
+pub async fn remove_visibility(path: Path<StaticPath>, db: Data<Database>) -> Json<V1Response> {
+    Json(V1Response::from_res(
         remove_visibility_task(&path.path, &path.token, &db).await,
     ))
 }
@@ -32,13 +30,13 @@ async fn remove_visibility_task(
     path: &str,
     token: &str,
     db: &Database,
-) -> Result<GMResponses, Box<dyn Error>> {
+) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
-            return Ok(GMResponses::Error {
-                kind: GMError::InvalidToken,
+            return Ok(V1Response::Error {
+                kind: V1Error::InvalidToken,
             })
         }
     };
@@ -46,19 +44,19 @@ async fn remove_visibility_task(
     let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(path);
 
     if !editable(&path_buf) {
-        return Err(GMError::NotEditable.into());
+        return Err(V1Error::NotEditable.into());
     }
 
     let file_name = path_buf.file_name().unwrap().to_str().unwrap();
-  
+
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
     match visibilities.0.get(file_name) {
-        None => return Ok(GMResponses::NothingChanged),
+        None => return Ok(V1Response::NothingChanged),
         _ => {
             let _ = visibilities.0.remove(file_name);
         }
     }
     visibilities.save(path_buf.parent().unwrap()).await?;
 
-    Ok(GMResponses::VisibilityChanged)
+    Ok(V1Response::VisibilityChanged)
 }

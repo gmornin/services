@@ -24,5 +24,7 @@ actix-multipart = "0.6"
 futures-util = "0.3"
 async-recursion = "1.0"
 actix-files = "0.6"
+actix-extensible-rate-limit = "0.2"
+goodmorning-bindings = {path = "../goodmorning-bindings", features = ["services-v1", "serde", "restrait"]}
 
 [dev-dependencies]

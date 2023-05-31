@@ -1,17 +1,17 @@
 use actix_web::Scope;
 
-mod remove_visibility;
-mod set_visibility;
-mod mkdir;
-mod overwrite;
-mod read;
-mod write_new;
-mod delete;
-mod touch;
 mod copy;
+mod copy_overwrite;
+mod delete;
+mod mkdir;
 mod r#move;
 mod move_overwrite;
-mod copy_overwrite;
+mod overwrite;
+mod read;
+mod remove_visibility;
+mod set_visibility;
+mod touch;
+mod write_new;
 
 pub fn scope() -> Scope {
     Scope::new("/storage/{token}")

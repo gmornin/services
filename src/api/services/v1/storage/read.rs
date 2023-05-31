@@ -9,10 +9,11 @@ use std::error::Error;
 use std::path::PathBuf;
 use tokio::fs::{self, try_exists};
 
-use crate::{
-    api::services::v1::*,
-    functions::*,
-    structs::*,
+use crate::{functions::*, structs::*};
+
+use goodmorning_bindings::{
+    services::v1::{DirItem, V1Error, V1Response},
+    traits::ResTrait,
 };
 
 #[derive(Deserialize)]
@@ -25,7 +26,7 @@ struct StaticPath {
 pub async fn read(path: Path<StaticPath>, req: HttpRequest, db: Data<Database>) -> HttpResponse {
     match read_task(&path.path, &path.token, &req, &db).await {
         Ok(ok) => ok,
-        Err(e) => HttpResponse::Ok().json(to_res::<GMResponses>(Err(e))),
+        Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
     }
 }
 
@@ -38,13 +39,13 @@ async fn read_task(
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await.unwrap() {
         Some(account) => account,
-        None => return Err(GMError::InvalidToken.into()),
+        None => return Err(V1Error::InvalidToken.into()),
     };
 
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
     if !try_exists(&path_buf).await.unwrap() {
-        return Err(GMError::FileNotFound.into());
+        return Err(V1Error::FileNotFound.into());
     }
 
     if fs::metadata(&path_buf).await?.is_dir() {
@@ -61,7 +62,10 @@ async fn read_task(
             items.push(DirItem {
                 name: entry.file_name().to_os_string().into_string().unwrap(),
                 is_file: entry.metadata().await?.is_file(),
-                visibility: items_visibilities.get(entry.file_name().to_str().unwrap()).overwrite_if_inherited(dir_visibilily)
+                visibility: items_visibilities
+                    .get(entry.file_name().to_str().unwrap())
+                    .overwrite_if_inherited(dir_visibilily)
+                    .into(),
             });
         }
 
@@ -69,7 +73,7 @@ async fn read_task(
     }
 
     if !try_exists(&path_buf).await.unwrap() {
-        return Err(GMError::FileNotFound.into());
+        return Err(V1Error::FileNotFound.into());
     }
 
     Ok(NamedFile::open_async(path_buf).await?.into_response(req))

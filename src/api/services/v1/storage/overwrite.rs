@@ -11,11 +11,12 @@ use tokio::{
     io::AsyncWriteExt,
 };
 
-use crate::{
-    api::services::v1::*,
-    functions::*,
-    structs::*,
+use goodmorning_bindings::{
+    services::v1::{V1Error, V1Response},
+    traits::ResTrait,
 };
+
+use crate::{functions::*, structs::*};
 
 #[derive(Deserialize)]
 struct StaticPath {
@@ -30,8 +31,8 @@ pub async fn overwrite(
     req: HttpRequest,
     db: Data<Database>,
     storage_limits: Data<StorageLimits>,
-) -> Json<GMResponses> {
-    Json(to_res(
+) -> Json<V1Response> {
+    Json(V1Response::from_res(
         overwrite_task(payload, &path.path, &path.token, req, &db, &storage_limits).await,
     ))
 }
@@ -43,13 +44,13 @@ async fn overwrite_task(
     req: HttpRequest,
     db: &Database,
     storage_limits: &StorageLimits,
-) -> Result<GMResponses, Box<dyn Error>> {
+) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await.unwrap() {
         Some(account) => account,
         None => {
-            return Ok(GMResponses::Error {
-                kind: GMError::InvalidToken,
+            return Ok(V1Response::Error {
+                kind: V1Error::InvalidToken,
             })
         }
     };
@@ -57,11 +58,11 @@ async fn overwrite_task(
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
     if !editable(&path_buf) {
-        return Err(GMError::NotEditable.into());
+        return Err(V1Error::NotEditable.into());
     }
 
     if !try_exists(&path_buf).await.unwrap() {
-        return Err(GMError::FileNotFound.into());
+        return Err(V1Error::FileNotFound.into());
     }
 
     if account
@@ -81,7 +82,7 @@ async fn overwrite_task(
         .await
         .unwrap()
     {
-        return Err(GMError::FileTooLarge.into());
+        return Err(V1Error::FileTooLarge.into());
     }
 
     let mut file = OpenOptions::new()
@@ -94,7 +95,7 @@ async fn overwrite_task(
 
     file.write_all(&data).await.unwrap();
 
-    Ok(GMResponses::Overwritten {
+    Ok(V1Response::Overwritten {
         path: format!("/{}/{}", account.id, path),
     })
 }

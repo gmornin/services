@@ -11,10 +11,11 @@ use tokio::{
     io::AsyncWriteExt,
 };
 
-use crate::{
-    api::services::v1::*,
-    functions::*,
-    structs::*,
+use crate::{functions::*, structs::*};
+
+use goodmorning_bindings::{
+    services::v1::{V1Error, V1Response},
+    traits::ResTrait,
 };
 
 #[derive(Deserialize)]
@@ -30,8 +31,8 @@ pub async fn write_new(
     req: HttpRequest,
     db: Data<Database>,
     storage_limits: Data<StorageLimits>,
-) -> Json<GMResponses> {
-    Json(to_res(
+) -> Json<V1Response> {
+    Json(V1Response::from_res(
         write_new_task(payload, &path.path, &path.token, req, &db, &storage_limits).await,
     ))
 }
@@ -43,13 +44,13 @@ async fn write_new_task(
     req: HttpRequest,
     db: &Database,
     storage_limits: &StorageLimits,
-) -> Result<GMResponses, Box<dyn Error>> {
+) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
-            return Ok(GMResponses::Error {
-                kind: GMError::InvalidToken,
+            return Ok(V1Response::Error {
+                kind: V1Error::InvalidToken,
             })
         }
     };
@@ -57,11 +58,11 @@ async fn write_new_task(
     let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
 
     if !editable(&path_buf) {
-        return Err(GMError::NotEditable.into());
+        return Err(V1Error::NotEditable.into());
     }
 
     if try_exists(&path_buf).await? {
-        return Err(GMError::PathOccupied.into());
+        return Err(V1Error::PathOccupied.into());
     }
 
     if account
@@ -78,7 +79,7 @@ async fn write_new_task(
         )
         .await?
     {
-        return Err(GMError::FileTooLarge.into());
+        return Err(V1Error::FileTooLarge.into());
     }
 
     let mut file = OpenOptions::new()
@@ -91,7 +92,7 @@ async fn write_new_task(
 
     file.write_all(&data).await?;
 
-    Ok(GMResponses::FileItemCreated {
+    Ok(V1Response::FileItemCreated {
         path: format!("/{}/{}", account.id, path),
     })
 }

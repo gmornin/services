@@ -1,9 +1,9 @@
 use crate::{
-    api::services::v1::GMError,
     functions::get_accounts,
     traits::{CollectionItem, Triggerable},
 };
 use async_trait::async_trait;
+use goodmorning_bindings::services::v1::V1Error;
 use lettre::{
     message::{header::ContentType, MessageBuilder},
     transport::smtp::authentication::Credentials,
@@ -56,10 +56,10 @@ impl Triggerable for EmailVerification {
         let mut account = accounts
             .find_one(doc! {"_id": &self.id}, None)
             .await?
-            .ok_or(GMError::NoSuchUser)?;
+            .ok_or(V1Error::NoSuchUser)?;
 
         if account.email != self.email {
-            return Err(GMError::EmailMismatch.into());
+            return Err(V1Error::EmailMismatch.into());
         }
 
         if account.verified {
