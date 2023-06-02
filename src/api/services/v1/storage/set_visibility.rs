@@ -1,45 +1,29 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 
 use crate::{functions::*, structs::*};
 
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1PathVisibility, V1Response, V1Visibility},
     traits::ResTrait,
 };
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[derive(Deserialize)]
-struct SetVisibility {
-    pub new: ItemVisibility,
-}
-
-#[post("/set_visibility/{path:.*}")]
-pub async fn set_visibility(
-    path: Path<StaticPath>,
-    db: Data<Database>,
-    post: Json<SetVisibility>,
-) -> Json<V1Response> {
+#[post("/set_visibility")]
+pub async fn set_visibility(db: Data<Database>, post: Json<V1PathVisibility>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        set_visibility_task(&path.path, &path.token, &db, &post).await,
+        set_visibility_task(&post.path, &post.token, post.visibility, &db).await,
     ))
 }
 
 async fn set_visibility_task(
     path: &str,
     token: &str,
+    new: V1Visibility,
     db: &Database,
-    post: &SetVisibility,
 ) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
@@ -61,9 +45,13 @@ async fn set_visibility_task(
 
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
     match visibilities.0.get(file_name) {
-        Some(visibility) if visibility == &post.new => return Ok(V1Response::NothingChanged),
+        Some(visibility) if visibility == &new.visibility.into() => {
+            return Ok(V1Response::NothingChanged)
+        }
         _ => {
-            let _ = visibilities.0.insert(file_name.to_string(), post.new);
+            let _ = visibilities
+                .0
+                .insert(file_name.to_string(), new.visibility.into());
         }
     }
     visibilities.save(path_buf.parent().unwrap()).await?;

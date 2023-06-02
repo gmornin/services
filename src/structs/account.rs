@@ -1,3 +1,4 @@
+use goodmorning_bindings::services::v1::V1IdentifierType;
 use std::path::PathBuf;
 
 use chrono::Utc;
@@ -164,6 +165,16 @@ pub enum IdentifierType {
     Id,
     #[serde(rename = "username")]
     Username,
+}
+
+impl From<V1IdentifierType> for IdentifierType {
+    fn from(value: V1IdentifierType) -> Self {
+        match value {
+            V1IdentifierType::Email => Self::Email,
+            V1IdentifierType::Username => Self::Username,
+            V1IdentifierType::Id => Self::Id,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

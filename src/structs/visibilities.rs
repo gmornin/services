@@ -1,3 +1,4 @@
+use goodmorning_bindings::services::v1::{ItemVisibility as V1ItemVisibility, V1Visibility};
 use mongodb::bson;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, path::Path};
@@ -94,9 +95,12 @@ pub struct Visibility {
     pub inherited: bool,
     pub visibility: ItemVisibility,
 }
-impl From<Visibility> for goodmorning_bindings::services::v1::Visibility {
+impl From<Visibility> for V1Visibility {
     fn from(value: Visibility) -> Self {
-        Self { inherited: value.inherited, visibility: value.visibility.into() }
+        Self {
+            inherited: value.inherited,
+            visibility: value.visibility.into(),
+        }
     }
 }
 
@@ -128,12 +132,23 @@ pub enum ItemVisibility {
     #[serde(rename = "private")]
     Private,
 }
-impl From<ItemVisibility> for goodmorning_bindings::services::v1::ItemVisibility {
+
+impl From<V1ItemVisibility> for ItemVisibility {
+    fn from(value: V1ItemVisibility) -> Self {
+        match value {
+            V1ItemVisibility::Hidden => Self::Hidden,
+            V1ItemVisibility::Public => Self::Public,
+            V1ItemVisibility::Private => Self::Private,
+        }
+    }
+}
+
+impl From<ItemVisibility> for V1ItemVisibility {
     fn from(value: ItemVisibility) -> Self {
         match value {
             ItemVisibility::Hidden => Self::Hidden,
             ItemVisibility::Public => Self::Public,
-            ItemVisibility::Private => Self::Private
+            ItemVisibility::Private => Self::Private,
         }
     }
 }

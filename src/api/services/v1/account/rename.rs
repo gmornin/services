@@ -1,31 +1,23 @@
 use std::error::Error;
 
+use crate::{functions::*, structs::*, traits::CollectionItem};
 use actix_web::{
     post,
     web::{Data, Json},
 };
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1RenameAccount, V1Response},
     traits::ResTrait,
 };
 use mongodb::Database;
-use serde::Deserialize;
-
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
-
-#[derive(Deserialize)]
-struct RenameAccount {
-    pub token: String,
-    pub new: String,
-}
 
 #[post("/rename")]
-async fn rename(post: Json<RenameAccount>, db: Data<Database>) -> Json<V1Response> {
+async fn rename(post: Json<V1RenameAccount>, db: Data<Database>) -> Json<V1Response> {
     Json(V1Response::from_res(rename_task(post, db).await))
 }
 
 async fn rename_task(
-    post: Json<RenameAccount>,
+    post: Json<V1RenameAccount>,
     db: Data<Database>,
 ) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();

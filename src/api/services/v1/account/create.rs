@@ -5,30 +5,19 @@ use actix_web::{
     web::{Data, Json},
 };
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1All3, V1Error, V1Response},
     traits::ResTrait,
 };
 use mongodb::Database;
-use serde::Deserialize;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
-#[derive(Deserialize)]
-struct CreateAccount {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-}
-
 #[post("/create")]
-async fn create(post: Json<CreateAccount>, db: Data<Database>) -> Json<V1Response> {
+async fn create(post: Json<V1All3>, db: Data<Database>) -> Json<V1Response> {
     Json(V1Response::from_res(create_task(post, db).await))
 }
 
-async fn create_task(
-    post: Json<CreateAccount>,
-    db: Data<Database>,
-) -> Result<V1Response, Box<dyn Error>> {
+async fn create_task(post: Json<V1All3>, db: Data<Database>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
     let accounts = get_accounts(&db);
     let triggers = get_triggers(&db);

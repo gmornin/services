@@ -1,29 +1,22 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1PathOnly, V1Response},
     traits::ResTrait,
 };
 
 use crate::{functions::*, structs::*};
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[get("/mkdir/{path:.*}")]
-pub async fn mkdir(path: Path<StaticPath>, db: Data<Database>) -> Json<V1Response> {
+#[post("/mkdir")]
+pub async fn mkdir(post: Json<V1PathOnly>, db: Data<Database>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        mkdir_task(&path.path, &path.token, &db).await,
+        mkdir_task(&post.path, &post.token, &db).await,
     ))
 }
 

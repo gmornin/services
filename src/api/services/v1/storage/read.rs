@@ -4,7 +4,6 @@ use actix_web::{
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::error::Error;
 use std::path::PathBuf;
 use tokio::fs::{self, try_exists};
@@ -12,19 +11,18 @@ use tokio::fs::{self, try_exists};
 use crate::{functions::*, structs::*};
 
 use goodmorning_bindings::{
-    services::v1::{DirItem, V1Error, V1Response},
+    services::v1::{V1DirItem, V1Error, V1Response},
     traits::ResTrait,
 };
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[get("/read/{path:.*}")]
-pub async fn read(path: Path<StaticPath>, req: HttpRequest, db: Data<Database>) -> HttpResponse {
-    match read_task(&path.path, &path.token, &req, &db).await {
+#[get("/read/{token}/{path:.*}")]
+pub async fn read(
+    path: Path<(String, String)>,
+    req: HttpRequest,
+    db: Data<Database>,
+) -> HttpResponse {
+    let (token, path) = path.into_inner();
+    match read_task(&path, &token, &req, &db).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
     }
@@ -59,7 +57,7 @@ async fn read_task(
                 continue;
             }
 
-            items.push(DirItem {
+            items.push(V1DirItem {
                 name: entry.file_name().to_os_string().into_string().unwrap(),
                 is_file: entry.metadata().await?.is_file(),
                 visibility: items_visibilities

@@ -6,7 +6,7 @@ use actix_web::{
 };
 use mongodb::Database;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
+use crate::{functions::*, structs::*, traits::CollectionItem};
 
 use goodmorning_bindings::{
     services::v1::{V1Error, V1Response},

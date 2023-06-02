@@ -1,29 +1,22 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use crate::{functions::*, structs::*};
 
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1PathOnly, V1Response},
     traits::ResTrait,
 };
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[get("/delete/{path:.*}")]
-pub async fn delete(path: Path<StaticPath>, db: Data<Database>) -> Json<V1Response> {
+#[post("/delete")]
+pub async fn delete(db: Data<Database>, post: Json<V1PathOnly>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        delete_task(&path.path, &path.token, &db).await,
+        delete_task(&post.path, &post.token, &db).await,
     ))
 }
 

@@ -1,5 +1,5 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
@@ -9,7 +9,7 @@ use std::{error::Error, path::PathBuf};
 use crate::{functions::*, structs::*};
 
 #[derive(Deserialize)]
-struct StaticPath {
+struct RemoveVis {
     path: String,
     token: String,
 }
@@ -19,10 +19,10 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-#[get("/remove_visibility/{path:.*}")]
-pub async fn remove_visibility(path: Path<StaticPath>, db: Data<Database>) -> Json<V1Response> {
+#[post("/remove_visibility")]
+pub async fn remove_visibility(post: Json<RemoveVis>, db: Data<Database>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        remove_visibility_task(&path.path, &path.token, &db).await,
+        remove_visibility_task(&post.path, &post.token, &db).await,
     ))
 }
 

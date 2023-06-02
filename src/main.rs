@@ -9,19 +9,48 @@ use actix_web::{
 };
 use dotenv::dotenv;
 use goodmorning_services::{functions::*, structs::StorageLimits, *};
-use std::{env, time::Duration};
+use rustls::{Certificate, PrivateKey, ServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
+use simplelog::*;
+use std::fs::OpenOptions;
+use std::{
+    env,
+    fs::{self, File},
+    io::BufReader,
+    path::PathBuf,
+    time::Duration,
+};
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
-    std::env::set_var("RUST_LOG", "debug");
-    env_logger::init();
+    sudo::escalate_if_needed().unwrap();
 
-    let port = env::var("PORT")
-        .expect("cannot find `PORT` in env")
-        .parse::<u16>()
-        .expect("cannot parse port to u16");
-    let ip = env::var("IP").expect("cannot find `IP` in env");
+    init();
+
+    dotenv().ok();
+
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            LevelFilter::Info,
+            Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            LevelFilter::Debug,
+            Config::default(),
+            OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(format!("/data/gm/services/logs/{}.log", chrono::Utc::now()))
+                .unwrap(),
+        ),
+    ])
+    .unwrap();
+
+    let config = load_rustls_config();
+
     let db = get_prod_database(&get_client().await);
 
     let storage_limits = StorageLimits {
@@ -30,8 +59,6 @@ async fn main() {
             .parse()
             .expect("cannot parse STORAGE_LIMIT_1 to u64"),
     };
-
-    println!("Starting server at {ip}:{port}");
 
     HttpServer::new(move || {
         let backend = InMemoryBackend::builder().build();
@@ -48,8 +75,10 @@ async fn main() {
             .app_data(Data::new(storage_limits))
             .wrap(middleware)
     })
-    .bind((ip, port))
+    .bind(("0.0.0.0", 80))
     .expect("cannot bind to port")
+    .bind_rustls(("0.0.0.0", 443), config)
+    .unwrap()
     .run()
     .await
     .expect("server down");
@@ -57,4 +86,42 @@ async fn main() {
 
 async fn pong() -> &'static str {
     "Pong!"
+}
+
+fn load_rustls_config() -> rustls::ServerConfig {
+    // init server config builder with safe defaults
+    let config = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth();
+
+    // load TLS key/cert files
+    let cert_file = &mut BufReader::new(File::open(env::var("CERT_CHAIN").unwrap()).unwrap());
+    let key_file = &mut BufReader::new(File::open(env::var("CERT_KEY").unwrap()).unwrap());
+
+    // convert files to key/cert objects
+    let cert_chain = certs(cert_file)
+        .unwrap()
+        .into_iter()
+        .map(Certificate)
+        .collect();
+    let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)
+        .unwrap()
+        .into_iter()
+        .map(PrivateKey)
+        .collect();
+
+    // exit if no keys could be parsed
+    if keys.is_empty() {
+        eprintln!("Could not locate PKCS 8 private keys.");
+        std::process::exit(1);
+    }
+
+    config.with_single_cert(cert_chain, keys.remove(0)).unwrap()
+}
+
+fn init() {
+    let path = PathBuf::from("/data/gm/services/logs/");
+    if !path.exists() {
+        fs::create_dir_all(path).unwrap();
+    }
 }

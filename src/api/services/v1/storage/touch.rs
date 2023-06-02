@@ -1,5 +1,5 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
@@ -15,15 +15,15 @@ use goodmorning_bindings::{
 };
 
 #[derive(Deserialize)]
-struct StaticPath {
+struct Touch {
     path: String,
     token: String,
 }
 
-#[get("/touch/{path:.*}")]
-pub async fn touch(path: Path<StaticPath>, db: Data<Database>) -> Json<V1Response> {
+#[get("/touch")]
+pub async fn touch(post: Json<Touch>, db: Data<Database>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        touch_task(&path.path, &path.token, &db).await,
+        touch_task(&post.path, &post.token, &db).await,
     ))
 }
 

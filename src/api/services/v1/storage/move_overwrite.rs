@@ -1,43 +1,30 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::{error::Error, ffi::OsStr, path::PathBuf};
 use tokio::fs;
 
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1FromTo, V1Response},
     traits::ResTrait,
 };
 
 use crate::{functions::*, structs::*};
 
-use super::r#move::*;
-
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[post("/move_overwrite/{path:.*}")]
-pub async fn move_overwrite(
-    path: Path<StaticPath>,
-    db: Data<Database>,
-    post: Json<MoveFrom>,
-) -> Json<V1Response> {
+#[post("/move/{path:.*}")]
+pub async fn r#move(db: Data<Database>, post: Json<V1FromTo>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        move_overwrite_task(&path.path, &path.token, &db, &post).await,
+        move_overwrite_task(&post.from, &post.to, &post.token, &db).await,
     ))
 }
 
 async fn move_overwrite_task(
-    path: &str,
+    from: &str,
+    to: &str,
     token: &str,
     db: &Database,
-    post: &MoveFrom,
 ) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
     let account = match Account::find_by_token(token, &accounts).await? {
@@ -49,13 +36,13 @@ async fn move_overwrite_task(
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(path);
+    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(to);
 
     if !editable(&path_buf) {
         return Err(V1Error::NotEditable.into());
     }
 
-    let from_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, post.from));
+    let from_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, from));
 
     if from_buf
         .iter()
@@ -88,7 +75,7 @@ async fn move_overwrite_task(
         Some(visibility) => *visibility,
         None => {
             return Ok(V1Response::Moved {
-                path: format!("/{}/{}", account.id, path),
+                path: format!("/{}/{}", account.id, to),
             })
         }
     };
@@ -112,6 +99,6 @@ async fn move_overwrite_task(
     }
 
     Ok(V1Response::Moved {
-        path: format!("/{}/{}", account.id, path),
+        path: format!("/{}/{}", account.id, to),
     })
 }

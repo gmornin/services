@@ -4,7 +4,6 @@ use actix_web::{
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 use tokio::{
     fs::{try_exists, OpenOptions},
@@ -18,22 +17,17 @@ use goodmorning_bindings::{
 
 use crate::{functions::*, structs::*};
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[post("/overwrite/{path:.*}")]
+#[post("/overwrite/{token}/{path:.*}")]
 pub async fn overwrite(
     payload: Multipart,
-    path: Path<StaticPath>,
+    path: Path<(String, String)>,
     req: HttpRequest,
     db: Data<Database>,
     storage_limits: Data<StorageLimits>,
 ) -> Json<V1Response> {
+    let (token, path) = path.into_inner();
     Json(V1Response::from_res(
-        overwrite_task(payload, &path.path, &path.token, req, &db, &storage_limits).await,
+        overwrite_task(payload, &path, &token, req, &db, &storage_limits).await,
     ))
 }
 

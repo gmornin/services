@@ -1,9 +1,8 @@
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Data, Json},
     *,
 };
 use mongodb::Database;
-use serde::Deserialize;
 use std::{
     error::Error,
     ffi::OsStr,
@@ -12,40 +11,28 @@ use std::{
 use tokio::{fs, io};
 
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1FromTo, V1Response},
     traits::ResTrait,
 };
 
 use crate::{functions::*, structs::*};
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[derive(Deserialize)]
-struct CopyFrom {
-    pub from: String,
-}
-
-#[post("/copy/{path:.*}")]
+#[post("/copy")]
 pub async fn copy(
-    path: Path<StaticPath>,
     db: Data<Database>,
-    post: Json<CopyFrom>,
+    post: Json<V1FromTo>,
     storage_limits: Data<StorageLimits>,
 ) -> Json<V1Response> {
     Json(V1Response::from_res(
-        copy_task(&path.path, &path.token, &db, &post, &storage_limits).await,
+        copy_task(&post.from, &post.to, &post.token, &db, &storage_limits).await,
     ))
 }
 
 async fn copy_task(
-    path: &str,
+    from: &str,
+    to: &str,
     token: &str,
     db: &Database,
-    post: &CopyFrom,
     storage_limits: &StorageLimits,
 ) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
@@ -58,13 +45,13 @@ async fn copy_task(
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(path);
+    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(to);
 
     if !editable(&path_buf) {
         return Err(V1Error::NotEditable.into());
     }
 
-    let from_buf = PathBuf::from(format!("usercontent/{}", post.from));
+    let from_buf = PathBuf::from(format!("usercontent/{}", from));
 
     if from_buf
         .iter()
@@ -120,7 +107,7 @@ async fn copy_task(
         Some(visibility) => *visibility,
         None => {
             return Ok(V1Response::Copied {
-                path: format!("/{}/{}", account.id, path),
+                path: format!("/{}/{}", account.id, to),
             })
         }
     };
@@ -142,7 +129,7 @@ async fn copy_task(
     }
 
     Ok(V1Response::Copied {
-        path: format!("/{}/{}", account.id, path),
+        path: format!("/{}/{}", account.id, to),
     })
 }
 

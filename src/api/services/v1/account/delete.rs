@@ -5,26 +5,20 @@ use actix_web::{
     web::{Data, Json},
 };
 use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
+    services::v1::{V1Error, V1Response, V1TokenOnly},
     traits::ResTrait,
 };
 use mongodb::Database;
-use serde::Deserialize;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
-
-#[derive(Deserialize)]
-struct DeleteAccount {
-    pub token: String,
-}
+use crate::{functions::*, structs::*, traits::CollectionItem};
 
 #[post("/delete")]
-async fn delete(post: Json<DeleteAccount>, db: Data<Database>) -> Json<V1Response> {
+async fn delete(post: Json<V1TokenOnly>, db: Data<Database>) -> Json<V1Response> {
     Json(V1Response::from_res(delete_task(post, db).await))
 }
 
 async fn delete_task(
-    post: Json<DeleteAccount>,
+    post: Json<V1TokenOnly>,
     db: Data<Database>,
 ) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
