@@ -11,7 +11,7 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, *};
 
 #[post("/mkdir")]
 pub async fn mkdir(post: Json<V1PathOnly>, db: Data<Database>) -> Json<V1Response> {
@@ -31,10 +31,16 @@ async fn mkdir_task(path: &str, token: &str, db: &Database) -> Result<V1Response
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
+    if !account.verified {
+        return Ok(V1Response::Error {
+            kind: V1Error::NotVerified,
+        });
+    }
 
-    if !editable(&path_buf) {
-        return Err(V1Error::NotEditable.into());
+    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+
+    if !editable(&path_buf) | has_dotdot(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
     }
 
     if fs::try_exists(&path_buf).await? {

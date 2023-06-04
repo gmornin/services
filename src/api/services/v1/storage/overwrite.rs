@@ -15,7 +15,7 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, *};
 
 #[post("/overwrite/{token}/{path:.*}")]
 pub async fn overwrite(
@@ -40,7 +40,7 @@ async fn overwrite_task(
     storage_limits: &StorageLimits,
 ) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(db);
-    let account = match Account::find_by_token(token, &accounts).await.unwrap() {
+    let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {
@@ -49,13 +49,19 @@ async fn overwrite_task(
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
-
-    if !editable(&path_buf) {
-        return Err(V1Error::NotEditable.into());
+    if !account.verified {
+        return Ok(V1Response::Error {
+            kind: V1Error::NotVerified,
+        });
     }
 
-    if !try_exists(&path_buf).await.unwrap() {
+    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+
+    if !editable(&path_buf) || !has_dotdot(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
+    }
+
+    if !try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
     }
 
@@ -71,7 +77,7 @@ async fn overwrite_task(
                     .parse::<u64>()
                     .unwrap(),
             ),
-            Some(file_size(&path_buf).await.unwrap()),
+            Some(file_size(&path_buf).await?),
         )
         .await
         .unwrap()
@@ -85,9 +91,9 @@ async fn overwrite_task(
         .await
         .unwrap();
 
-    let data = bytes_from_multipart(payload).await.unwrap();
+    let data = bytes_from_multipart(payload).await?;
 
-    file.write_all(&data).await.unwrap();
+    file.write_all(&data).await?;
 
     Ok(V1Response::Overwritten {
         path: format!("/{}/{}", account.id, path),

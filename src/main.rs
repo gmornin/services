@@ -25,9 +25,8 @@ use std::{
 async fn main() {
     sudo::escalate_if_needed().unwrap();
 
-    init();
-
     dotenv().ok();
+    init();
 
     CombinedLogger::init(vec![
         TermLogger::new(
@@ -43,7 +42,11 @@ async fn main() {
                 .create(true)
                 .write(true)
                 .truncate(true)
-                .open(format!("/data/gm/services/logs/{}.log", chrono::Utc::now()))
+                .open(format!(
+                    "{}/logs/services-{}.log",
+                    STORAGE.as_str(),
+                    chrono::Utc::now()
+                ))
                 .unwrap(),
         ),
     ])
@@ -120,7 +123,7 @@ fn load_rustls_config() -> rustls::ServerConfig {
 }
 
 fn init() {
-    let path = PathBuf::from("/data/gm/services/logs/");
+    let path = PathBuf::from(STORAGE.as_str()).join("logs");
     if !path.exists() {
         fs::create_dir_all(path).unwrap();
     }

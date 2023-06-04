@@ -8,7 +8,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use tokio::fs::{self, try_exists};
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, *};
 
 use goodmorning_bindings::{
     services::v1::{V1DirItem, V1Error, V1Response},
@@ -35,14 +35,22 @@ async fn read_task(
     db: &Database,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let accounts = get_accounts(db);
-    let account = match Account::find_by_token(token, &accounts).await.unwrap() {
+    let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
+    if !account.verified {
+        return Err(V1Error::NotVerified.into());
+    }
 
-    if !try_exists(&path_buf).await.unwrap() {
+    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+
+    if has_dotdot(&path_buf) || is_bson(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
+    }
+
+    if !try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
     }
 
@@ -70,7 +78,7 @@ async fn read_task(
         return Ok(HttpResponse::Ok().json(items));
     }
 
-    if !try_exists(&path_buf).await.unwrap() {
+    if !try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
     }
 

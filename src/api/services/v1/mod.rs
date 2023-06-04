@@ -10,4 +10,5 @@ pub fn scope() -> Scope {
         .service(account::scope())
         .service(trigger::scope())
         .service(storage::scope())
+        .service(usercontent::scope())
 }

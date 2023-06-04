@@ -3,7 +3,7 @@ use actix_web::{
     *,
 };
 use mongodb::Database;
-use std::{error::Error, ffi::OsStr, path::PathBuf};
+use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use goodmorning_bindings::{
@@ -11,18 +11,19 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, *};
 
 #[post("/move/{path:.*}")]
 pub async fn r#move(db: Data<Database>, post: Json<V1FromTo>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        move_overwrite_task(&post.from, &post.to, &post.token, &db).await,
+        move_overwrite_task(&post.from, &post.to, &post.from_userid, &post.token, &db).await,
     ))
 }
 
 async fn move_overwrite_task(
     from: &str,
     to: &str,
+    from_id: &str,
     token: &str,
     db: &Database,
 ) -> Result<V1Response, Box<dyn Error>> {
@@ -36,36 +37,38 @@ async fn move_overwrite_task(
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(to);
-
-    if !editable(&path_buf) {
-        return Err(V1Error::NotEditable.into());
+    if !account.verified {
+        return Ok(V1Response::Error {
+            kind: V1Error::NotVerified,
+        });
     }
 
-    let from_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, from));
+    let to_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(to.trim_start_matches('/'));
+    let from_buf = PathBuf::from(USERCONTENT.as_str()).join(from_id).join(from.trim_start_matches('/'));
 
-    if from_buf
-        .iter()
-        .any(|section| section == OsStr::new(".") || section == OsStr::new(".."))
-    {
+    if !editable(&to_buf) || !has_dotdot(&to_buf) || !has_dotdot(&from_buf) {
+        return Err(V1Error::PermissionDenied.into());
+    }
+
+    if fs::try_exists(&to_buf).await? {
+        return Err(V1Error::PathOccupied.into());
+    }
+
+    if from_id == account.id {
+        if !fs::try_exists(&from_buf).await? {
+            return Err(V1Error::FileNotFound.into());
+        }
+    } else if !fs::try_exists(&from_buf).await? || Visibilities::visibility(&from_buf).await?.visibility == ItemVisibility::Private {
         return Err(V1Error::FileNotFound.into());
     }
 
-    if !editable(&from_buf) {
-        return Err(V1Error::NotEditable.into());
-    }
-
-    if !(fs::try_exists(&from_buf).await? && fs::try_exists(&path_buf).await?) {
-        return Err(V1Error::FileNotFound.into());
-    }
-
-    if fs::metadata(&path_buf).await?.is_dir() {
-        fs::remove_dir_all(&path_buf).await?;
+    if fs::metadata(&to_buf).await?.is_dir() {
+        fs::remove_dir_all(&to_buf).await?;
     } else {
-        fs::remove_file(&path_buf).await?;
+        fs::remove_file(&to_buf).await?;
     }
 
-    fs::rename(&from_buf, &path_buf).await?;
+    fs::rename(&from_buf, &to_buf).await?;
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;
     let from_visibility = match from_visibilities
@@ -80,22 +83,22 @@ async fn move_overwrite_task(
         }
     };
 
-    let file_name = path_buf
+    let file_name = to_buf
         .file_name()
         .unwrap()
         .to_os_string()
         .into_string()
         .unwrap();
 
-    if from_buf.parent() == path_buf.parent() {
+    if from_buf.parent() == to_buf.parent() {
         from_visibilities.0.remove(&file_name);
         from_visibilities.0.insert(file_name, from_visibility);
-        from_visibilities.save(path_buf.parent().unwrap()).await?;
+        from_visibilities.save(to_buf.parent().unwrap()).await?;
     } else {
         from_visibilities.0.remove(&file_name);
-        let mut new_visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
+        let mut new_visibilities = Visibilities::read_dir(to_buf.parent().unwrap()).await?;
         new_visibilities.0.insert(file_name, from_visibility);
-        new_visibilities.save(path_buf.parent().unwrap()).await?;
+        new_visibilities.save(to_buf.parent().unwrap()).await?;
     }
 
     Ok(V1Response::Moved {

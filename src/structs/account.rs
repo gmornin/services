@@ -6,7 +6,7 @@ use mongodb::{bson::doc, Collection};
 use serde::{Deserialize, Serialize};
 use tokio::io;
 
-use crate::{functions::*, structs::*, traits::*};
+use crate::{functions::*, structs::*, traits::*, *};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Account {
@@ -117,7 +117,7 @@ impl Account {
     ) -> io::Result<bool> {
         if extra > remove {
             Ok(
-                dir_size(&PathBuf::from(&format!("usercontent/{}", self.id))).await?
+                dir_size(&PathBuf::from(&format!("{}/{}", USERCONTENT.as_str(), self.id))).await?
                     + extra.unwrap_or_default()
                     - remove.unwrap_or_default()
                     > self.storage_limits(limits),

@@ -6,7 +6,7 @@ use mongodb::Database;
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, *};
 
 use goodmorning_bindings::{
     services::v1::{V1Error, V1PathOnly, V1Response},
@@ -31,13 +31,19 @@ async fn delete_task(path: &str, token: &str, db: &Database) -> Result<V1Respons
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}/{}", account.id, path));
-
-    if !editable(&path_buf) {
-        return Err(V1Error::NotEditable.into());
+    if !account.verified {
+        return Ok(V1Response::Error {
+            kind: V1Error::NotVerified,
+        });
     }
 
-    if fs::try_exists(&path_buf).await? {
+    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(account.id).join(path.trim_start_matches('/'));
+
+    if !editable(&path_buf) | has_dotdot(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
+    }
+
+    if !fs::try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
     }
 

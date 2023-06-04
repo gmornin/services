@@ -71,7 +71,7 @@ async fn account_verification() {
         Box::new(account.email_verification()),
         &Duration::from_secs(3600),
     );
-    trigger.save(&triggers).await.unwrap();
+    trigger.save(&triggers).await?;
 
     assert!(!trigger.is_invalid());
     assert!(Trigger::trigger("not exist", &db).await.is_err());

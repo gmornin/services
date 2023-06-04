@@ -6,7 +6,7 @@ use mongodb::Database;
 use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, *};
 
 #[derive(Deserialize)]
 struct RemoveVis {
@@ -41,10 +41,16 @@ async fn remove_visibility_task(
         }
     };
 
-    let path_buf = PathBuf::from(format!("usercontent/{}", account.id)).join(path);
+    if !account.verified {
+        return Ok(V1Response::Error {
+            kind: V1Error::NotVerified,
+        });
+    }
+
+    let path_buf = PathBuf::from(format!("{}/{}", USERCONTENT.as_str(), account.id)).join(path);
 
     if !editable(&path_buf) {
-        return Err(V1Error::NotEditable.into());
+        return Err(V1Error::PermissionDenied.into());
     }
 
     let file_name = path_buf.file_name().unwrap().to_str().unwrap();
