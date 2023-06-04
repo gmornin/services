@@ -1,8 +1,4 @@
-use actix_web::{
-    web::{Data, Json},
-    *,
-};
-use mongodb::Database;
+use actix_web::{web::Json, *};
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
@@ -14,14 +10,14 @@ use goodmorning_bindings::{
 use crate::{functions::*, structs::*, *};
 
 #[post("/mkdir")]
-pub async fn mkdir(post: Json<V1PathOnly>, db: Data<Database>) -> Json<V1Response> {
+pub async fn mkdir(post: Json<V1PathOnly>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        mkdir_task(&post.path, &post.token, &db).await,
+        mkdir_task(&post.path, &post.token).await,
     ))
 }
 
-async fn mkdir_task(path: &str, token: &str, db: &Database) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -37,7 +33,9 @@ async fn mkdir_task(path: &str, token: &str, db: &Database) -> Result<V1Response
         });
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(path.trim_start_matches('/'));
 
     if !editable(&path_buf) | has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

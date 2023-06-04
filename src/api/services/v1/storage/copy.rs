@@ -1,25 +1,17 @@
-use actix_web::{
-    web::{Data, Json},
-    *,
-};
+use actix_web::{web::Json, *};
 use goodmorning_bindings::{
     services::v1::{V1Error, V1FromTo, V1Response},
     traits::ResTrait,
 };
-use mongodb::Database;
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use crate::{functions::*, structs::*, *};
 
 #[post("/copy")]
-pub async fn copy(
-    db: Data<Database>,
-    post: Json<V1FromTo>,
-    storage_limits: Data<StorageLimits>,
-) -> Json<V1Response> {
+pub async fn copy(post: Json<V1FromTo>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        copy_task(&post.from, &post.to, &post.from_userid, &post.token, &db, &storage_limits).await,
+        copy_task(&post.from, &post.to, &post.from_userid, &post.token).await,
     ))
 }
 
@@ -28,10 +20,8 @@ async fn copy_task(
     to: &str,
     from_id: &str,
     token: &str,
-    db: &Database,
-    storage_limits: &StorageLimits,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -47,8 +37,12 @@ async fn copy_task(
         });
     }
 
-    let to_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(to.trim_start_matches('/'));
-    let from_buf = PathBuf::from(USERCONTENT.as_str()).join(from_id).join(from.trim_start_matches('/'));
+    let to_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(to.trim_start_matches('/'));
+    let from_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(from_id)
+        .join(from.trim_start_matches('/'));
 
     if !editable(&to_buf) || !has_dotdot(&to_buf) || !has_dotdot(&from_buf) {
         return Err(V1Error::PermissionDenied.into());
@@ -62,7 +56,9 @@ async fn copy_task(
         if !fs::try_exists(&from_buf).await? {
             return Err(V1Error::FileNotFound.into());
         }
-    } else if !fs::try_exists(&from_buf).await? || Visibilities::visibility(&from_buf).await?.visibility == ItemVisibility::Private {
+    } else if !fs::try_exists(&from_buf).await?
+        || Visibilities::visibility(&from_buf).await?.visibility == ItemVisibility::Private
+    {
         return Err(V1Error::FileNotFound.into());
     }
 
@@ -70,7 +66,7 @@ async fn copy_task(
 
     if metadata.is_file() {
         if account
-            .exceeds_limit(storage_limits, Some(metadata.len()), None)
+            .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
             .await?
         {
             return Err(V1Error::FileTooLarge.into());
@@ -78,7 +74,11 @@ async fn copy_task(
         fs::copy(&from_buf, &to_buf).await?;
     } else {
         if account
-            .exceeds_limit(storage_limits, Some(dir_size(&from_buf).await?), None)
+            .exceeds_limit(
+                STORAGE_LIMITS.get().unwrap(),
+                Some(dir_size(&from_buf).await?),
+                None,
+            )
             .await?
         {
             return Err(V1Error::FileTooLarge.into());

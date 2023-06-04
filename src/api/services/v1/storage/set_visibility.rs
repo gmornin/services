@@ -1,10 +1,6 @@
-use actix_web::{
-    web::{Data, Json},
-    *,
-};
-use mongodb::Database;
-use tokio::fs;
+use actix_web::{web::Json, *};
 use std::{error::Error, path::PathBuf};
+use tokio::fs;
 
 use crate::{functions::*, structs::*, *};
 
@@ -14,9 +10,9 @@ use goodmorning_bindings::{
 };
 
 #[post("/set_visibility")]
-pub async fn set_visibility(db: Data<Database>, post: Json<V1PathVisibility>) -> Json<V1Response> {
+pub async fn set_visibility(post: Json<V1PathVisibility>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        set_visibility_task(&post.path, &post.token, post.visibility, &db).await,
+        set_visibility_task(&post.path, &post.token, post.visibility).await,
     ))
 }
 
@@ -24,9 +20,8 @@ async fn set_visibility_task(
     path: &str,
     token: &str,
     new: V1Visibility,
-    db: &Database,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -42,7 +37,9 @@ async fn set_visibility_task(
         });
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(path.trim_start_matches('/'));
 
     if !fs::try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());

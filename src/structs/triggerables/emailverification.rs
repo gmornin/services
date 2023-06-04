@@ -1,8 +1,10 @@
 use crate::{
     functions::get_accounts,
+    structs::Trigger,
     traits::{CollectionItem, Triggerable},
 };
 use async_trait::async_trait;
+use chrono::Utc;
 use goodmorning_bindings::services::v1::V1Error;
 use lettre::{
     message::{header::ContentType, MessageBuilder},
@@ -33,11 +35,13 @@ impl Triggerable for EmailVerification {
             .from(smtp_from.parse()?)
             .to(format!("{}<{}>", self.username, self.email).parse()?)
             .subject("Verify your GoodMorning account")
-            .header(ContentType::TEXT_HTML)
+            .header(ContentType::TEXT_PLAIN)
             .body(format!(
-                "{}{}",
-                env::var("TRIGGER_URL").expect("cannot find `TRIGGER_URL` in env"),
-                id
+                "Verification link: {}\n\nAccount details:\n  Username: {}\n  User ID: {}\n\nThese details should be displayed for you to double check. If your believe this is not your account, you may click the link below to revoke this verification attempt.\n\nRevoke link: {}",
+                Trigger::use_url(id),
+                self.username,
+                self.id,
+                Trigger::revoke_url(id)
             ))?;
 
         let creds = Credentials::new(email_username, email_password);
@@ -51,7 +55,12 @@ impl Triggerable for EmailVerification {
         Ok(())
     }
 
-    async fn trigger(&self, db: &Database, _id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
+    async fn trigger(&self, db: &Database, id: &str, expiry: u64) -> Result<(), Box<dyn Error>> {
+        if expiry > Utc::now().timestamp() as u64 {
+            self.revoke(db, id, expiry).await?;
+            return Err(V1Error::TriggerNotFound.into());
+        }
+
         let accounts = get_accounts(db);
         let mut account = accounts
             .find_one(doc! {"_id": &self.id}, None)

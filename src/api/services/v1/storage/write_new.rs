@@ -1,13 +1,11 @@
 use actix_multipart::Multipart;
 use actix_web::{
-    web::{Data, Json, Path},
+    web::{Json, Path},
     *,
 };
-use mongodb::Database;
-use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 use tokio::{
-    fs::{try_exists, OpenOptions, self},
+    fs::{self, try_exists, OpenOptions},
     io::AsyncWriteExt,
 };
 
@@ -18,22 +16,15 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-#[derive(Deserialize)]
-struct StaticPath {
-    path: String,
-    token: String,
-}
-
-#[post("/write_new/{path:.*}")]
+#[post("/write-new/{token}/{path:.*}")]
 pub async fn write_new(
     payload: Multipart,
-    path: Path<StaticPath>,
+    path: Path<(String, String)>,
     req: HttpRequest,
-    db: Data<Database>,
-    storage_limits: Data<StorageLimits>,
 ) -> Json<V1Response> {
+    let (token, path) = path.into_inner();
     Json(V1Response::from_res(
-        write_new_task(payload, &path.path, &path.token, req, &db, &storage_limits).await,
+        write_new_task(payload, &path, &token, req).await,
     ))
 }
 
@@ -42,10 +33,8 @@ async fn write_new_task(
     path: &str,
     token: &str,
     req: HttpRequest,
-    db: &Database,
-    storage_limits: &StorageLimits,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -61,7 +50,9 @@ async fn write_new_task(
         });
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(path.trim_start_matches('/'));
 
     if !fs::try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
@@ -73,7 +64,7 @@ async fn write_new_task(
 
     if account
         .exceeds_limit(
-            storage_limits,
+            STORAGE_LIMITS.get().unwrap(),
             Some(
                 req.headers()
                     .get("content-length")

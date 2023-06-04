@@ -20,5 +20,6 @@ pub fn is_bson(path: &Path) -> bool {
 }
 
 pub fn has_dotdot(path: &Path) -> bool {
-    path.iter().any(|section|matches!(section.to_str().unwrap(), "." | ".."))
+    path.iter()
+        .any(|section| matches!(section.to_str().unwrap(), "." | ".."))
 }

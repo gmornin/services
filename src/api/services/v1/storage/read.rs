@@ -1,9 +1,5 @@
 use actix_files::NamedFile;
-use actix_web::{
-    web::{Data, Path},
-    *,
-};
-use mongodb::Database;
+use actix_web::{web::Path, *};
 use std::error::Error;
 use std::path::PathBuf;
 use tokio::fs::{self, try_exists};
@@ -16,13 +12,9 @@ use goodmorning_bindings::{
 };
 
 #[get("/read/{token}/{path:.*}")]
-pub async fn read(
-    path: Path<(String, String)>,
-    req: HttpRequest,
-    db: Data<Database>,
-) -> HttpResponse {
+pub async fn read(path: Path<(String, String)>, req: HttpRequest) -> HttpResponse {
     let (token, path) = path.into_inner();
-    match read_task(&path, &token, &req, &db).await {
+    match read_task(&path, &token, &req).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
     }
@@ -32,9 +24,8 @@ async fn read_task(
     path: &str,
     token: &str,
     req: &HttpRequest,
-    db: &Database,
 ) -> Result<HttpResponse, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
@@ -44,7 +35,9 @@ async fn read_task(
         return Err(V1Error::NotVerified.into());
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(path.trim_start_matches('/'));
 
     if has_dotdot(&path_buf) || is_bson(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

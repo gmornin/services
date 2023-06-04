@@ -1,26 +1,22 @@
 use std::error::Error;
 
-use actix_web::{
-    post,
-    web::{Data, Json},
-};
+use actix_web::{post, web::Json};
 use goodmorning_bindings::{
     services::v1::{V1All3, V1Error, V1Response},
     traits::ResTrait,
 };
-use mongodb::Database;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/create")]
-async fn create(post: Json<V1All3>, db: Data<Database>) -> Json<V1Response> {
-    Json(V1Response::from_res(create_task(post, db).await))
+async fn create(post: Json<V1All3>) -> Json<V1Response> {
+    Json(V1Response::from_res(create_task(post).await))
 }
 
-async fn create_task(post: Json<V1All3>, db: Data<Database>) -> Result<V1Response, Box<dyn Error>> {
+async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
-    let accounts = get_accounts(&db);
-    let triggers = get_triggers(&db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
+    let triggers = get_triggers(DATABASE.get().unwrap());
 
     if Account::find_by_username(post.username.clone(), &accounts)
         .await?
@@ -40,9 +36,9 @@ async fn create_task(post: Json<V1All3>, db: Data<Database>) -> Result<V1Respons
 
     let trigger = Trigger::new_from_action(
         Box::new(account.email_verification()),
-        &EMAIL_VERIFICATION_DURATION,
+        EMAIL_VERIFICATION_DURATION.get().unwrap(),
     );
-    trigger.init(&db).await?;
+    trigger.init(DATABASE.get().unwrap()).await?;
     trigger.save_create(&triggers).await?;
 
     account.save_create(&accounts).await?;

@@ -1,8 +1,4 @@
-use actix_web::{
-    web::{Data, Json},
-    *,
-};
-use mongodb::Database;
+use actix_web::{web::Json, *};
 use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
@@ -21,14 +17,14 @@ struct Touch {
 }
 
 #[get("/touch")]
-pub async fn touch(post: Json<Touch>, db: Data<Database>) -> Json<V1Response> {
+pub async fn touch(post: Json<Touch>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        touch_task(&post.path, &post.token, &db).await,
+        touch_task(&post.path, &post.token).await,
     ))
 }
 
-async fn touch_task(path: &str, token: &str, db: &Database) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+async fn touch_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -44,7 +40,9 @@ async fn touch_task(path: &str, token: &str, db: &Database) -> Result<V1Response
         });
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(path.trim_start_matches('/'));
+    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(path.trim_start_matches('/'));
 
     if !fs::try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());

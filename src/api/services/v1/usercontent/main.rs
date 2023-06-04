@@ -1,11 +1,18 @@
 use std::{error::Error, path::PathBuf};
 
 use actix_files::NamedFile;
-use actix_web::{get, web, HttpResponse, HttpRequest};
-use goodmorning_bindings::{services::v1::{V1Error, V1DirItem, V1Response}, traits::ResTrait};
+use actix_web::{get, web, HttpRequest, HttpResponse};
+use goodmorning_bindings::{
+    services::v1::{V1DirItem, V1Error, V1Response},
+    traits::ResTrait,
+};
 use tokio::fs;
 
-use crate::{structs::{Visibilities, Visibility, ItemVisibility}, USERCONTENT, functions::{has_dotdot, is_bson}};
+use crate::{
+    functions::{has_dotdot, is_bson},
+    structs::{ItemVisibility, Visibilities, Visibility},
+    *,
+};
 
 #[get("/id/{id}/{path:.*}")]
 pub async fn by_id(path: web::Path<(String, String)>, req: HttpRequest) -> HttpResponse {
@@ -16,14 +23,22 @@ pub async fn by_id(path: web::Path<(String, String)>, req: HttpRequest) -> HttpR
     }
 }
 
-pub async fn fetch(id: &str, path: &str, req: &HttpRequest) -> Result<HttpResponse, Box<dyn Error>> {
-    let path = PathBuf::from(USERCONTENT.as_str()).join(id).join(path.trim_start_matches('/'));
+pub async fn fetch(
+    id: &str,
+    path: &str,
+    req: &HttpRequest,
+) -> Result<HttpResponse, Box<dyn Error>> {
+    let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(id)
+        .join(path.trim_start_matches('/'));
 
     if has_dotdot(&path) || is_bson(&path) {
         return Err(V1Error::PermissionDenied.into());
     }
 
-    if !fs::try_exists(&path).await? || Visibilities::visibility(&path).await?.visibility == ItemVisibility::Private {
+    if !fs::try_exists(&path).await?
+        || Visibilities::visibility(&path).await?.visibility == ItemVisibility::Private
+    {
         return Err(V1Error::FileNotFound.into());
     }
     let metadata = fs::metadata(&path).await?;
@@ -40,8 +55,8 @@ pub async fn fetch(id: &str, path: &str, req: &HttpRequest) -> Result<HttpRespon
 
         while let Some(entry) = dir_content.next_entry().await? {
             let visibility: Visibility = items_visibilities
-                    .get(entry.file_name().to_str().unwrap())
-                    .overwrite_if_inherited(dir_visibilily);
+                .get(entry.file_name().to_str().unwrap())
+                .overwrite_if_inherited(dir_visibilily);
 
             if is_bson(&entry.path()) || visibility.visibility != ItemVisibility::Public {
                 continue;

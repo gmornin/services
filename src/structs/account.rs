@@ -116,12 +116,15 @@ impl Account {
         remove: Option<u64>,
     ) -> io::Result<bool> {
         if extra > remove {
-            Ok(
-                dir_size(&PathBuf::from(&format!("{}/{}", USERCONTENT.as_str(), self.id))).await?
-                    + extra.unwrap_or_default()
-                    - remove.unwrap_or_default()
-                    > self.storage_limits(limits),
-            )
+            Ok(dir_size(&PathBuf::from(&format!(
+                "{}/{}",
+                USERCONTENT.get().unwrap().as_str(),
+                self.id
+            )))
+            .await?
+                + extra.unwrap_or_default()
+                - remove.unwrap_or_default()
+                > self.storage_limits(limits))
         } else {
             Ok(true)
         }
@@ -177,7 +180,7 @@ impl From<V1IdentifierType> for IdentifierType {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct StorageLimits {
     pub _1: u64,
 }

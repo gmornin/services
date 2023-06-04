@@ -1,5 +1,6 @@
 use crate::functions::get_triggers;
 use crate::traits::{CollectionItem, Triggerable};
+use crate::*;
 use chrono::Utc;
 use goodmorning_bindings::services::v1::V1Error;
 use mongodb::{bson::doc, Database};
@@ -51,8 +52,36 @@ impl Trigger {
             .await
     }
 
+    pub async fn revoke(&self, db: &Database) -> Result<(), Box<dyn Error>> {
+        let triggers = get_triggers(db);
+        let trigger = triggers
+            .find_one_and_delete(doc! {"_id": &self.id}, None)
+            .await?
+            .ok_or(V1Error::TriggerNotFound)?;
+
+        if trigger.is_invalid() {
+            return Err(V1Error::TriggerNotFound.into());
+        }
+
+        trigger.action.revoke(db, &trigger.id, trigger.expiry).await
+    }
+
     pub fn is_invalid(&self) -> bool {
         self.expiry < Utc::now().timestamp() as u64
+    }
+
+    pub fn use_url(id: &str) -> String {
+        format!(
+            "{}/api/services/v1/trigger/use/{id}",
+            SELF_ADDR.get().unwrap().as_str()
+        )
+    }
+
+    pub fn revoke_url(id: &str) -> String {
+        format!(
+            "{}/api/services/v1/trigger/revoke/{id}",
+            SELF_ADDR.get().unwrap().as_str()
+        )
     }
 }
 

@@ -12,12 +12,12 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-#[get("/use/{id}")]
-async fn r#use(id: Path<String>) -> Json<V1Response> {
-    Json(V1Response::from_res(use_task(&id.into_inner()).await))
+#[get("/revoke/{id}")]
+async fn revoke(id: Path<String>) -> Json<V1Response> {
+    Json(V1Response::from_res(revoke_task(&id.into_inner()).await))
 }
 
-async fn use_task(id: &str) -> Result<V1Response, Box<dyn Error>> {
+async fn revoke_task(id: &str) -> Result<V1Response, Box<dyn Error>> {
     let triggers = get_triggers(DATABASE.get().unwrap());
     let trigger = match Trigger::find_by_id(id, &triggers).await? {
         Some(trigger) => trigger,
@@ -30,7 +30,7 @@ async fn use_task(id: &str) -> Result<V1Response, Box<dyn Error>> {
         return Err(V1Error::TriggerNotFound.into());
     }
 
-    trigger.trigger(DATABASE.get().unwrap()).await?;
+    trigger.revoke(DATABASE.get().unwrap()).await?;
 
-    Ok(V1Response::Triggered)
+    Ok(V1Response::Revoked)
 }

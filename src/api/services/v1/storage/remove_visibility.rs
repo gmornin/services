@@ -1,8 +1,4 @@
-use actix_web::{
-    web::{Data, Json},
-    *,
-};
-use mongodb::Database;
+use actix_web::{web::Json, *};
 use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 
@@ -20,18 +16,14 @@ use goodmorning_bindings::{
 };
 
 #[post("/remove_visibility")]
-pub async fn remove_visibility(post: Json<RemoveVis>, db: Data<Database>) -> Json<V1Response> {
+pub async fn remove_visibility(post: Json<RemoveVis>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        remove_visibility_task(&post.path, &post.token, &db).await,
+        remove_visibility_task(&post.path, &post.token).await,
     ))
 }
 
-async fn remove_visibility_task(
-    path: &str,
-    token: &str,
-    db: &Database,
-) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+async fn remove_visibility_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -47,7 +39,12 @@ async fn remove_visibility_task(
         });
     }
 
-    let path_buf = PathBuf::from(format!("{}/{}", USERCONTENT.as_str(), account.id)).join(path);
+    let path_buf = PathBuf::from(format!(
+        "{}/{}",
+        USERCONTENT.get().unwrap().as_str(),
+        account.id
+    ))
+    .join(path);
 
     if !editable(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

@@ -1,4 +1,4 @@
-TRIGGER_URL=http://localhost:8080/api/services/v1/trigger/use/
+SELF_ADDR=http://localhost:8080/api/services/v1/trigger/use/
 
 MONGO_HOST=mongodb://localhost:27017
 
@@ -8,6 +8,9 @@ SMTP_USERNAME=example@gmail.com
 SMTP_PASSWORD=from apis
 SMTP_RELAY=smtp.gmail.com
 SMTP_FROM=GoodMorningTex<example@gmail.com>
+
+VERIFICATION_TIMEFRAME=3600
+STORAGE_LIMIT_1=1048576
 
 CERT_CHAIN=Path to cert chain e.g. /etc/letsencrypt/live/siriusmart.duckdns.org/fullchain.pem
 CERT_KEY=Path to cert key e.g. /etc/letsencrypt/live/siriusmart.duckdns.org/privkey.pem

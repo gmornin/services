@@ -1,8 +1,4 @@
-use actix_web::{
-    web::{Data, Json},
-    *,
-};
-use mongodb::Database;
+use actix_web::{web::Json, *};
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
@@ -14,9 +10,9 @@ use goodmorning_bindings::{
 use crate::{functions::*, structs::*, *};
 
 #[post("/move/{path:.*}")]
-pub async fn r#move(db: Data<Database>, post: Json<V1FromTo>) -> Json<V1Response> {
+pub async fn r#move(post: Json<V1FromTo>) -> Json<V1Response> {
     Json(V1Response::from_res(
-        move_overwrite_task(&post.from, &post.to, &post.from_userid, &post.token, &db).await,
+        move_overwrite_task(&post.from, &post.to, &post.from_userid, &post.token).await,
     ))
 }
 
@@ -25,9 +21,8 @@ async fn move_overwrite_task(
     to: &str,
     from_id: &str,
     token: &str,
-    db: &Database,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
     let account = match Account::find_by_token(token, &accounts).await? {
         Some(account) => account,
         None => {
@@ -43,8 +38,12 @@ async fn move_overwrite_task(
         });
     }
 
-    let to_buf = PathBuf::from(USERCONTENT.as_str()).join(&account.id).join(to.trim_start_matches('/'));
-    let from_buf = PathBuf::from(USERCONTENT.as_str()).join(from_id).join(from.trim_start_matches('/'));
+    let to_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(&account.id)
+        .join(to.trim_start_matches('/'));
+    let from_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(from_id)
+        .join(from.trim_start_matches('/'));
 
     if !editable(&to_buf) || !has_dotdot(&to_buf) || !has_dotdot(&from_buf) {
         return Err(V1Error::PermissionDenied.into());
@@ -58,7 +57,9 @@ async fn move_overwrite_task(
         if !fs::try_exists(&from_buf).await? {
             return Err(V1Error::FileNotFound.into());
         }
-    } else if !fs::try_exists(&from_buf).await? || Visibilities::visibility(&from_buf).await?.visibility == ItemVisibility::Private {
+    } else if !fs::try_exists(&from_buf).await?
+        || Visibilities::visibility(&from_buf).await?.visibility == ItemVisibility::Private
+    {
         return Err(V1Error::FileNotFound.into());
     }
 

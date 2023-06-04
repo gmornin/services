@@ -1,27 +1,20 @@
 use std::error::Error;
 
-use crate::{functions::*, structs::*, traits::CollectionItem};
-use actix_web::{
-    post,
-    web::{Data, Json},
-};
+use crate::{functions::*, structs::*, traits::CollectionItem, *};
+use actix_web::{post, web::Json};
 use goodmorning_bindings::{
     services::v1::{V1Error, V1RenameAccount, V1Response},
     traits::ResTrait,
 };
-use mongodb::Database;
 
 #[post("/rename")]
-async fn rename(post: Json<V1RenameAccount>, db: Data<Database>) -> Json<V1Response> {
-    Json(V1Response::from_res(rename_task(post, db).await))
+async fn rename(post: Json<V1RenameAccount>) -> Json<V1Response> {
+    Json(V1Response::from_res(rename_task(post).await))
 }
 
-async fn rename_task(
-    post: Json<V1RenameAccount>,
-    db: Data<Database>,
-) -> Result<V1Response, Box<dyn Error>> {
+async fn rename_task(post: Json<V1RenameAccount>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
-    let accounts = get_accounts(&db);
+    let accounts = get_accounts(DATABASE.get().unwrap());
 
     let mut account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
