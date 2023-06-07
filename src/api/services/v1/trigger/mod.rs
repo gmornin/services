@@ -4,5 +4,7 @@ mod r#use;
 use actix_web::Scope;
 
 pub fn scope() -> Scope {
-    Scope::new("/trigger").service(r#use::r#use).service(revoke::revoke)
+    Scope::new("/trigger")
+        .service(r#use::r#use)
+        .service(revoke::revoke)
 }

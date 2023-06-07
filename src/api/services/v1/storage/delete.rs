@@ -4,21 +4,16 @@ use tokio::fs;
 
 use crate::{functions::*, structs::*, *};
 
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1PathOnly, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1PathOnly, V1Response};
 
 #[post("/delete")]
-pub async fn delete(post: Json<V1PathOnly>) -> Json<V1Response> {
-    Json(V1Response::from_res(
-        delete_task(&post.path, &post.token).await,
-    ))
+pub async fn delete(post: Json<V1PathOnly>) -> HttpResponse {
+    from_res(delete_task(post).await)
 }
 
-async fn delete_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
+async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {
@@ -35,7 +30,7 @@ async fn delete_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Erro
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
         .join(account.id)
-        .join(path.trim_start_matches('/'));
+        .join(post.path.trim_start_matches('/'));
 
     if !editable(&path_buf) | has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

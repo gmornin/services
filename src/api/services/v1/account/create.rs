@@ -1,16 +1,13 @@
 use std::error::Error;
 
-use actix_web::{post, web::Json};
-use goodmorning_bindings::{
-    services::v1::{V1All3, V1Error, V1Response},
-    traits::ResTrait,
-};
+use actix_web::{post, web::Json, HttpResponse};
+use goodmorning_bindings::services::v1::{V1All3, V1Error, V1Response};
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/create")]
-async fn create(post: Json<V1All3>) -> Json<V1Response> {
-    Json(V1Response::from_res(create_task(post).await))
+async fn create(post: Json<V1All3>) -> HttpResponse {
+    from_res(create_task(post).await)
 }
 
 async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {

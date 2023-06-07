@@ -4,25 +4,16 @@ use tokio::fs;
 
 use crate::{functions::*, structs::*, *};
 
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1PathVisibility, V1Response, V1Visibility},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1PathVisibility, V1Response};
 
 #[post("/set_visibility")]
-pub async fn set_visibility(post: Json<V1PathVisibility>) -> Json<V1Response> {
-    Json(V1Response::from_res(
-        set_visibility_task(&post.path, &post.token, post.visibility).await,
-    ))
+pub async fn set_visibility(post: Json<V1PathVisibility>) -> HttpResponse {
+    from_res(set_visibility_task(post).await)
 }
 
-async fn set_visibility_task(
-    path: &str,
-    token: &str,
-    new: V1Visibility,
-) -> Result<V1Response, Box<dyn Error>> {
+async fn set_visibility_task(post: Json<V1PathVisibility>) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {
@@ -39,7 +30,7 @@ async fn set_visibility_task(
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
         .join(&account.id)
-        .join(path.trim_start_matches('/'));
+        .join(post.path.trim_start_matches('/'));
 
     if !fs::try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
@@ -49,13 +40,13 @@ async fn set_visibility_task(
 
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
     match visibilities.0.get(file_name) {
-        Some(visibility) if visibility == &new.visibility.into() => {
+        Some(visibility) if visibility == &post.visibility.visibility.into() => {
             return Ok(V1Response::NothingChanged)
         }
         _ => {
             let _ = visibilities
                 .0
-                .insert(file_name.to_string(), new.visibility.into());
+                .insert(file_name.to_string(), post.visibility.visibility.into());
         }
     }
     visibilities.save(path_buf.parent().unwrap()).await?;

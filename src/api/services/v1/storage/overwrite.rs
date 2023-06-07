@@ -1,18 +1,12 @@
 use actix_multipart::Multipart;
-use actix_web::{
-    web::{Json, Path},
-    *,
-};
+use actix_web::{web::Path, *};
 use std::{error::Error, path::PathBuf};
 use tokio::{
     fs::{try_exists, OpenOptions},
     io::AsyncWriteExt,
 };
 
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 use crate::{functions::*, structs::*, *};
 
@@ -21,21 +15,18 @@ pub async fn overwrite(
     payload: Multipart,
     path: Path<(String, String)>,
     req: HttpRequest,
-) -> Json<V1Response> {
-    let (token, path) = path.into_inner();
-    Json(V1Response::from_res(
-        overwrite_task(payload, &path, &token, req).await,
-    ))
+) -> HttpResponse {
+    from_res(overwrite_task(payload, path, req).await)
 }
 
 async fn overwrite_task(
     payload: Multipart,
-    path: &str,
-    token: &str,
+    path: Path<(String, String)>,
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
+    let (token, path) = path.into_inner();
     let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let account = match Account::find_by_token(&token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {

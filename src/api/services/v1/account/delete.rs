@@ -1,15 +1,12 @@
 use std::error::Error;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
-use actix_web::{post, web::Json};
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response, V1TokenOnly},
-    traits::ResTrait,
-};
+use actix_web::{post, web::Json, HttpResponse};
+use goodmorning_bindings::services::v1::{V1Error, V1Response, V1TokenOnly};
 
 #[post("/delete")]
-async fn delete(post: Json<V1TokenOnly>) -> Json<V1Response> {
-    Json(V1Response::from_res(delete_task(post).await))
+async fn delete(post: Json<V1TokenOnly>) -> HttpResponse {
+    from_res(delete_task(post).await)
 }
 
 async fn delete_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {

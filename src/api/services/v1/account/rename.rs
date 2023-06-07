@@ -1,15 +1,12 @@
 use std::error::Error;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
-use actix_web::{post, web::Json};
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1RenameAccount, V1Response},
-    traits::ResTrait,
-};
+use actix_web::{post, web::Json, HttpResponse};
+use goodmorning_bindings::services::v1::{V1Error, V1RenameAccount, V1Response};
 
 #[post("/rename")]
-async fn rename(post: Json<V1RenameAccount>) -> Json<V1Response> {
-    Json(V1Response::from_res(rename_task(post).await))
+async fn rename(post: Json<V1RenameAccount>) -> HttpResponse {
+    from_res(rename_task(post).await)
 }
 
 async fn rename_task(post: Json<V1RenameAccount>) -> Result<V1Response, Box<dyn Error>> {

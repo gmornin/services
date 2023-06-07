@@ -1,7 +1,7 @@
 use actix_files::NamedFile;
 use actix_web::{web::Path, *};
-use std::error::Error;
 use std::path::PathBuf;
+use std::{error::Error, time::UNIX_EPOCH};
 use tokio::fs::{self, try_exists};
 
 use crate::{functions::*, structs::*, *};
@@ -13,20 +13,19 @@ use goodmorning_bindings::{
 
 #[get("/read/{token}/{path:.*}")]
 pub async fn read(path: Path<(String, String)>, req: HttpRequest) -> HttpResponse {
-    let (token, path) = path.into_inner();
-    match read_task(&path, &token, &req).await {
+    match read_task(path, &req).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
     }
 }
 
 async fn read_task(
-    path: &str,
-    token: &str,
+    path: Path<(String, String)>,
     req: &HttpRequest,
 ) -> Result<HttpResponse, Box<dyn Error>> {
+    let (token, path) = path.into_inner();
     let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let account = match Account::find_by_token(&token, &accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };
@@ -58,21 +57,25 @@ async fn read_task(
                 continue;
             }
 
+            let metadata = entry.metadata().await?;
+
             items.push(V1DirItem {
                 name: entry.file_name().to_os_string().into_string().unwrap(),
-                is_file: entry.metadata().await?.is_file(),
+                is_file: metadata.is_file(),
                 visibility: items_visibilities
                     .get(entry.file_name().to_str().unwrap())
                     .overwrite_if_inherited(dir_visibilily)
                     .into(),
+                last_modified: metadata
+                    .modified()?
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+                size: metadata.len(),
             });
         }
 
         return Ok(HttpResponse::Ok().json(items));
-    }
-
-    if !try_exists(&path_buf).await? {
-        return Err(V1Error::FileNotFound.into());
     }
 
     Ok(NamedFile::open_async(path_buf).await?.into_response(req))

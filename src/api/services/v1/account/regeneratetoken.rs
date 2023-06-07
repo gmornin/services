@@ -1,16 +1,13 @@
 use std::error::Error;
 
-use actix_web::{post, web::Json};
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1PasswordId, V1Response},
-    traits::ResTrait,
-};
+use actix_web::{post, web::Json, HttpResponse};
+use goodmorning_bindings::services::v1::{V1Error, V1PasswordId, V1Response};
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/regeneratetoken")]
-async fn regenerate_token(post: Json<V1PasswordId>) -> Json<V1Response> {
-    Json(V1Response::from_res(regenerate_token_task(post).await))
+async fn regenerate_token(post: Json<V1PasswordId>) -> HttpResponse {
+    from_res(regenerate_token_task(post).await)
 }
 
 async fn regenerate_token_task(post: Json<V1PasswordId>) -> Result<V1Response, Box<dyn Error>> {

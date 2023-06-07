@@ -1,30 +1,19 @@
 use actix_web::{web::Json, *};
-use serde::Deserialize;
+
 use std::{error::Error, path::PathBuf};
 
 use crate::{functions::*, structs::*, *};
 
-#[derive(Deserialize)]
-struct RemoveVis {
-    path: String,
-    token: String,
-}
-
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1PathOnly, V1Response};
 
 #[post("/remove_visibility")]
-pub async fn remove_visibility(post: Json<RemoveVis>) -> Json<V1Response> {
-    Json(V1Response::from_res(
-        remove_visibility_task(&post.path, &post.token).await,
-    ))
+pub async fn remove_visibility(post: Json<V1PathOnly>) -> HttpResponse {
+    from_res(remove_visibility_task(post).await)
 }
 
-async fn remove_visibility_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
+async fn remove_visibility_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {
@@ -44,7 +33,7 @@ async fn remove_visibility_task(path: &str, token: &str) -> Result<V1Response, B
         USERCONTENT.get().unwrap().as_str(),
         account.id
     ))
-    .join(path);
+    .join(&post.path);
 
     if !editable(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

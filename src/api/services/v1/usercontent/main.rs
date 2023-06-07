@@ -1,7 +1,7 @@
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, path::PathBuf, time::UNIX_EPOCH};
 
 use actix_files::NamedFile;
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{routes, web, HttpRequest, HttpResponse};
 use goodmorning_bindings::{
     services::v1::{V1DirItem, V1Error, V1Response},
     traits::ResTrait,
@@ -14,20 +14,21 @@ use crate::{
     *,
 };
 
+#[routes]
 #[get("/id/{id}/{path:.*}")]
+#[get("/{id}/{path:.*}")]
 pub async fn by_id(path: web::Path<(String, String)>, req: HttpRequest) -> HttpResponse {
-    let (id, path) = path.into_inner();
-    match fetch(&id, &path, &req).await {
+    match fetch(path, &req).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
     }
 }
 
 pub async fn fetch(
-    id: &str,
-    path: &str,
+    path: web::Path<(String, String)>,
     req: &HttpRequest,
 ) -> Result<HttpResponse, Box<dyn Error>> {
+    let (id, path) = path.into_inner();
     let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
         .join(id)
         .join(path.trim_start_matches('/'));
@@ -66,6 +67,12 @@ pub async fn fetch(
                 name: entry.file_name().to_os_string().into_string().unwrap(),
                 is_file: entry.metadata().await?.is_file(),
                 visibility: visibility.into(),
+                last_modified: metadata
+                    .modified()?
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+                size: metadata.len(),
             });
         }
 

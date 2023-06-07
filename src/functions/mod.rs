@@ -14,3 +14,5 @@ mod editable;
 pub use editable::*;
 mod dir_operations;
 pub use dir_operations::*;
+mod from_res;
+pub use from_res::*;

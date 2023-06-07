@@ -1,25 +1,19 @@
 use std::error::Error;
 
-use actix_web::{
-    get,
-    web::{Json, Path},
-};
+use actix_web::{get, web::Path, HttpResponse};
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 #[get("/use/{id}")]
-async fn r#use(id: Path<String>) -> Json<V1Response> {
-    Json(V1Response::from_res(use_task(&id.into_inner()).await))
+async fn r#use(path: Path<String>) -> HttpResponse {
+    from_res(use_task(path).await)
 }
 
-async fn use_task(id: &str) -> Result<V1Response, Box<dyn Error>> {
+async fn use_task(id: Path<String>) -> Result<V1Response, Box<dyn Error>> {
     let triggers = get_triggers(DATABASE.get().unwrap());
-    let trigger = match Trigger::find_by_id(id, &triggers).await? {
+    let trigger = match Trigger::find_by_id(&id, &triggers).await? {
         Some(trigger) => trigger,
         None => return Err(V1Error::TriggerNotFound.into()),
     };

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use actix_web::{post, web::Json};
+use actix_web::{http::StatusCode, post, web::Json, HttpResponse, HttpResponseBuilder};
 use goodmorning_bindings::{
     services::v1::{V1Error, V1PasswordId, V1Response},
     traits::ResTrait,
@@ -9,8 +9,9 @@ use goodmorning_bindings::{
 use crate::{functions::*, structs::*, *};
 
 #[post("/login")]
-async fn login(post: Json<V1PasswordId>) -> Json<V1Response> {
-    Json(V1Response::from_res(login_task(post).await))
+async fn login(post: Json<V1PasswordId>) -> HttpResponse {
+    let res = V1Response::from_res(login_task(post).await);
+    HttpResponseBuilder::new(StatusCode::from_u16(res.status_code()).unwrap()).json(res)
 }
 
 async fn login_task(post: Json<V1PasswordId>) -> Result<V1Response, Box<dyn Error>> {

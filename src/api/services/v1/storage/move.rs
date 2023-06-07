@@ -2,28 +2,18 @@ use actix_web::{web::Json, *};
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1FromTo, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
 
 use crate::{functions::*, structs::*, *};
 
 #[post("/move/{path:.*}")]
-pub async fn r#move(post: Json<V1FromTo>) -> Json<V1Response> {
-    Json(V1Response::from_res(
-        move_task(&post.from, &post.to, &post.from_userid, &post.token).await,
-    ))
+pub async fn r#move(post: Json<V1FromTo>) -> HttpResponse {
+    from_res(move_task(post).await)
 }
 
-async fn move_task(
-    from: &str,
-    to: &str,
-    from_id: &str,
-    token: &str,
-) -> Result<V1Response, Box<dyn Error>> {
+async fn move_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let account = match Account::find_by_token(&post.token, &accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {
@@ -40,10 +30,10 @@ async fn move_task(
 
     let to_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
         .join(&account.id)
-        .join(to.trim_start_matches('/'));
+        .join(post.to.trim_start_matches('/'));
     let from_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(from_id)
-        .join(from.trim_start_matches('/'));
+        .join(&post.from_userid)
+        .join(post.from.trim_start_matches('/'));
 
     if !editable(&to_buf) || !has_dotdot(&to_buf) || !has_dotdot(&from_buf) {
         return Err(V1Error::PermissionDenied.into());
@@ -53,7 +43,7 @@ async fn move_task(
         return Err(V1Error::PathOccupied.into());
     }
 
-    if from_id == account.id {
+    if post.from_userid == account.id {
         if !fs::try_exists(&from_buf).await? {
             return Err(V1Error::FileNotFound.into());
         }
@@ -73,7 +63,7 @@ async fn move_task(
         Some(visibility) => *visibility,
         None => {
             return Ok(V1Response::Moved {
-                path: format!("/{}/{}", account.id, to),
+                path: format!("/{}/{}", account.id, post.to),
             })
         }
     };
@@ -97,6 +87,6 @@ async fn move_task(
     }
 
     Ok(V1Response::Moved {
-        path: format!("/{}/{}", account.id, to),
+        path: format!("/{}/{}", account.id, post.to),
     })
 }
