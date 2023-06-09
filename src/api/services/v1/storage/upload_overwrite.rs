@@ -10,16 +10,16 @@ use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 use crate::{functions::*, structs::*, *};
 
-#[post("/overwrite/{token}/{path:.*}")]
-pub async fn overwrite(
+#[post("/upload-overwrite/{token}/{path:.*}")]
+pub async fn upload_overwrite(
     payload: Multipart,
     path: Path<(String, String)>,
     req: HttpRequest,
 ) -> HttpResponse {
-    from_res(overwrite_task(payload, path, req).await)
+    from_res(upload_overwrite_task(payload, path, req).await)
 }
 
-async fn overwrite_task(
+async fn upload_overwrite_task(
     payload: Multipart,
     path: Path<(String, String)>,
     req: HttpRequest,

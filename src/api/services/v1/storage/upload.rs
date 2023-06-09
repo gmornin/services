@@ -2,7 +2,7 @@ use actix_multipart::Multipart;
 use actix_web::{web::Path, *};
 use std::{error::Error, path::PathBuf};
 use tokio::{
-    fs::{self, try_exists, OpenOptions},
+    fs::{self, OpenOptions},
     io::AsyncWriteExt,
 };
 
@@ -45,11 +45,7 @@ async fn upload_task(
         .join(&account.id)
         .join(path.trim_start_matches('/'));
 
-    if !fs::try_exists(&path_buf).await? {
-        return Err(V1Error::FileNotFound.into());
-    }
-
-    if try_exists(&path_buf).await? {
+    if fs::try_exists(&path_buf).await? {
         return Err(V1Error::PathOccupied.into());
     }
 

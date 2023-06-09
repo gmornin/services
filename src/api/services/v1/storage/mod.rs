@@ -8,7 +8,7 @@ mod file;
 mod mkdir;
 mod r#move;
 mod move_overwrite;
-mod overwrite;
+mod upload_overwrite;
 mod read;
 mod remove_visibility;
 mod set_visibility;
@@ -17,7 +17,7 @@ mod upload;
 
 pub fn scope() -> Scope {
     Scope::new("/storage")
-        .service(overwrite::overwrite)
+        .service(upload_overwrite::upload_overwrite)
         .service(upload::upload)
         // .service(read::read)
         .service(mkdir::mkdir)
