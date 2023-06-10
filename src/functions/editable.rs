@@ -5,14 +5,12 @@ pub fn editable(path: &Path) -> bool {
         return false;
     }
 
-    !matches!(
-        path.iter()
-            .skip(2)
-            .map(|section| section.to_str().unwrap())
-            .collect::<Vec<_>>()
-            .as_slice(),
-        [] | [_] | ["system", ..]
-    )
+    let path_slice = path
+        .iter()
+        .skip(5)
+        .map(|section| section.to_str().unwrap())
+        .collect::<Vec<_>>();
+    !(path_slice.len() < 2 || path_slice[1] == ".system")
 }
 
 pub fn is_bson(path: &Path) -> bool {

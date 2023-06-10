@@ -28,13 +28,13 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
     }
 
     let to_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(post.to.trim_start_matches('/'));
     let from_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&post.from_userid)
+        .join(post.from_userid.to_string())
         .join(post.from.trim_start_matches('/'));
 
-    if !editable(&to_buf) || !has_dotdot(&to_buf) || !has_dotdot(&from_buf) {
+    if !editable(&to_buf) || is_bson(&from_buf) || has_dotdot(&to_buf) || has_dotdot(&from_buf) {
         return Err(V1Error::PermissionDenied.into());
     }
 
@@ -83,9 +83,7 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
     {
         Some(visibility) => *visibility,
         None => {
-            return Ok(V1Response::Copied {
-                path: format!("/{}/{}", account.id, post.to),
-            })
+            return Ok(V1Response::Copied)
         }
     };
 
@@ -105,7 +103,5 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         new_visibilities.save(to_buf.parent().unwrap()).await?;
     }
 
-    Ok(V1Response::Copied {
-        path: format!("/{}/{}", account.id, post.to),
-    })
+    Ok(V1Response::Copied)
 }

@@ -13,16 +13,10 @@ async fn r#use(path: Path<String>) -> HttpResponse {
 
 async fn use_task(id: Path<String>) -> Result<V1Response, Box<dyn Error>> {
     let triggers = get_triggers(DATABASE.get().unwrap());
-    let trigger = match Trigger::find_by_id(&id, &triggers).await? {
+    let trigger = match Trigger::find_by_id(id.into_inner(), &triggers).await? {
         Some(trigger) => trigger,
         None => return Err(V1Error::TriggerNotFound.into()),
     };
-
-    if trigger.is_invalid() {
-        trigger.revoke(DATABASE.get().unwrap()).await?;
-        trigger.delete(&triggers).await?;
-        return Err(V1Error::TriggerNotFound.into());
-    }
 
     trigger.trigger(DATABASE.get().unwrap()).await?;
 

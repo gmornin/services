@@ -43,6 +43,7 @@ impl Trigger {
             .ok_or(V1Error::TriggerNotFound)?;
 
         if trigger.is_invalid() {
+            self.delete(&triggers).await?;
             return Err(V1Error::TriggerNotFound.into());
         }
 
@@ -85,8 +86,8 @@ impl Trigger {
     }
 }
 
-impl CollectionItem for Trigger {
-    fn id(&self) -> &str {
-        &self.id
+impl CollectionItem<String> for Trigger {
+    fn id(&self) -> String {
+        self.id.to_string()
     }
 }

@@ -34,10 +34,10 @@ async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(path.trim_start_matches('/'));
 
-    if !editable(&path_buf) | has_dotdot(&path_buf) {
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());
     }
 
@@ -48,7 +48,5 @@ async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error
     // fs::create_dir_all(&path_buf).await?;
     fs::create_dir(&path_buf).await?;
 
-    Ok(V1Response::FileItemCreated {
-        path: format!("/{}/{}", account.id, path),
-    })
+    Ok(V1Response::FileItemCreated)
 }

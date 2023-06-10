@@ -6,7 +6,7 @@ use crate::{functions::*, structs::*, *};
 
 use goodmorning_bindings::services::v1::{V1Error, V1PathOnly, V1Response};
 
-#[post("/remove_visibility")]
+#[post("/remove-visibility")]
 pub async fn remove_visibility(post: Json<V1PathOnly>) -> HttpResponse {
     from_res(remove_visibility_task(post).await)
 }
@@ -28,14 +28,11 @@ async fn remove_visibility_task(post: Json<V1PathOnly>) -> Result<V1Response, Bo
         });
     }
 
-    let path_buf = PathBuf::from(format!(
-        "{}/{}",
-        USERCONTENT.get().unwrap().as_str(),
-        account.id
-    ))
-    .join(&post.path);
+    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
+        .join(account.id.to_string())
+        .join(post.path.trim_start_matches('/'));
 
-    if !editable(&path_buf) {
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());
     }
 

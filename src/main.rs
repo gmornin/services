@@ -1,7 +1,4 @@
-use actix_extensible_rate_limit::{
-    backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder},
-    RateLimiter,
-};
+
 use actix_web::{
     middleware::Logger,
     web::{self, Data},
@@ -21,7 +18,6 @@ use std::{
     fs::{self, File},
     io::BufReader,
     path::PathBuf,
-    time::Duration,
 };
 
 #[tokio::main]
@@ -68,11 +64,11 @@ async fn main() {
     // };
 
     HttpServer::new(move || {
-        let backend = InMemoryBackend::builder().build();
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
-            .real_ip_key()
-            .build();
-        let middleware = RateLimiter::builder(backend, input).add_headers().build();
+        // let backend = InMemoryBackend::builder().build();
+        // let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
+        //     .real_ip_key()
+        //     .build();
+        // let middleware = RateLimiter::builder(backend, input).add_headers().build();
         App::new()
             .service(api::scope())
             .route("/", web::get().to(pong))
@@ -80,7 +76,7 @@ async fn main() {
             .app_data(Data::new(db.clone()))
             // .app_data(Data::new(EMAIL_VERIFICATION_DURATION))
             // .app_data(Data::new(storage_limits))
-            .wrap(middleware)
+            // .wrap(middleware)
     })
     .bind(("0.0.0.0", 80))
     .expect("cannot bind to port")

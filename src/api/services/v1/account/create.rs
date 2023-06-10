@@ -29,7 +29,15 @@ async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {
         return Err(V1Error::EmailTaken.into());
     }
 
-    let account = Account::new(post.username, &post.password, &post.email);
+    let account = Account::new(
+        post.username,
+        &post.password,
+        &post.email,
+        DATABASE.get().unwrap(),
+    )
+    .await?;
+
+    account.save_create(&accounts).await?;
 
     let trigger = Trigger::new_from_action(
         Box::new(account.email_verification()),
@@ -37,8 +45,6 @@ async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {
     );
     trigger.init(DATABASE.get().unwrap()).await?;
     trigger.save_create(&triggers).await?;
-
-    account.save_create(&accounts).await?;
 
     Ok(V1Response::Created {
         id: account.id,

@@ -13,7 +13,7 @@ async fn revoke(path: Path<String>) -> HttpResponse {
 
 async fn revoke_task(id: Path<String>) -> Result<V1Response, Box<dyn Error>> {
     let triggers = get_triggers(DATABASE.get().unwrap());
-    let trigger = match Trigger::find_by_id(&id, &triggers).await? {
+    let trigger = match Trigger::find_by_id(id.into_inner(), &triggers).await? {
         Some(trigger) => trigger,
         None => return Err(V1Error::TriggerNotFound.into()),
     };

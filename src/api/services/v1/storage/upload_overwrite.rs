@@ -42,10 +42,10 @@ async fn upload_overwrite_task(
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(path.trim_start_matches('/'));
 
-    if !editable(&path_buf) || !has_dotdot(&path_buf) {
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());
     }
 
@@ -83,7 +83,5 @@ async fn upload_overwrite_task(
 
     file.write_all(&data).await?;
 
-    Ok(V1Response::Overwritten {
-        path: format!("/{}/{}", account.id, path),
-    })
+    Ok(V1Response::Overwritten)
 }

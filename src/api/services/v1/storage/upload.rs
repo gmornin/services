@@ -42,8 +42,12 @@ async fn upload_task(
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(path.trim_start_matches('/'));
+
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
+    }
 
     if fs::try_exists(&path_buf).await? {
         return Err(V1Error::PathOccupied.into());
@@ -76,7 +80,5 @@ async fn upload_task(
 
     file.write_all(&data).await?;
 
-    Ok(V1Response::FileItemCreated {
-        path: format!("/{}/{}", account.id, path),
-    })
+    Ok(V1Response::FileItemCreated)
 }

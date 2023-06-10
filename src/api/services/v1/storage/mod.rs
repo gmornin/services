@@ -8,12 +8,12 @@ mod file;
 mod mkdir;
 mod r#move;
 mod move_overwrite;
-mod upload_overwrite;
 mod read;
 mod remove_visibility;
 mod set_visibility;
 mod touch;
 mod upload;
+mod upload_overwrite;
 
 pub fn scope() -> Scope {
     Scope::new("/storage")

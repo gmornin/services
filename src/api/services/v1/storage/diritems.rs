@@ -25,10 +25,10 @@ async fn diritems_task(path: Path<(String, String)>) -> Result<V1Response, Box<d
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(path.trim_start_matches('/'));
 
-    if has_dotdot(&path_buf) || is_bson(&path_buf) {
+    if has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());
     }
 

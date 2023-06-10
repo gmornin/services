@@ -29,10 +29,10 @@ async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id)
+        .join(account.id.to_string())
         .join(post.path.trim_start_matches('/'));
 
-    if !editable(&path_buf) | has_dotdot(&path_buf) {
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());
     }
 

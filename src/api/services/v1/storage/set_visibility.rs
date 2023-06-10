@@ -6,7 +6,7 @@ use crate::{functions::*, structs::*, *};
 
 use goodmorning_bindings::services::v1::{V1Error, V1PathVisibility, V1Response};
 
-#[post("/set_visibility")]
+#[post("/set-visibility")]
 pub async fn set_visibility(post: Json<V1PathVisibility>) -> HttpResponse {
     from_res(set_visibility_task(post).await)
 }
@@ -29,8 +29,12 @@ async fn set_visibility_task(post: Json<V1PathVisibility>) -> Result<V1Response,
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(post.path.trim_start_matches('/'));
+
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
+    }
 
     if !fs::try_exists(&path_buf).await? {
         return Err(V1Error::FileNotFound.into());
@@ -40,13 +44,13 @@ async fn set_visibility_task(post: Json<V1PathVisibility>) -> Result<V1Response,
 
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
     match visibilities.0.get(file_name) {
-        Some(visibility) if visibility == &post.visibility.visibility.into() => {
+        Some(visibility) if visibility == &post.visibility.into() => {
             return Ok(V1Response::NothingChanged)
         }
         _ => {
             let _ = visibilities
                 .0
-                .insert(file_name.to_string(), post.visibility.visibility.into());
+                .insert(file_name.to_string(), post.visibility.into());
         }
     }
     visibilities.save(path_buf.parent().unwrap()).await?;

@@ -35,7 +35,7 @@ async fn read_task(
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(path.trim_start_matches('/'));
 
     if has_dotdot(&path_buf) || is_bson(&path_buf) {

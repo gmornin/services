@@ -17,7 +17,7 @@ use crate::{
 #[routes]
 #[get("/id/{id}/{path:.*}")]
 #[get("/{id}/{path:.*}")]
-pub async fn by_id(path: web::Path<(String, String)>, req: HttpRequest) -> HttpResponse {
+pub async fn by_id(path: web::Path<(u64, String)>, req: HttpRequest) -> HttpResponse {
     match fetch(path, &req).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
@@ -25,12 +25,12 @@ pub async fn by_id(path: web::Path<(String, String)>, req: HttpRequest) -> HttpR
 }
 
 pub async fn fetch(
-    path: web::Path<(String, String)>,
+    path: web::Path<(u64, String)>,
     req: &HttpRequest,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let (id, path) = path.into_inner();
     let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(id)
+        .join(id.to_string())
         .join(path.trim_start_matches('/'));
 
     if has_dotdot(&path) || is_bson(&path) {

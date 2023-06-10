@@ -4,7 +4,7 @@ use crate::{
     traits::{CollectionItem, Triggerable},
 };
 use async_trait::async_trait;
-use chrono::Utc;
+
 use goodmorning_bindings::services::v1::V1Error;
 use lettre::{
     message::{header::ContentType, MessageBuilder},
@@ -19,7 +19,7 @@ use std::{env, error::Error};
 pub struct EmailVerification {
     pub email: String,
     pub username: String,
-    pub id: String,
+    pub id: i64,
 }
 
 #[typetag::serde]
@@ -55,12 +55,7 @@ impl Triggerable for EmailVerification {
         Ok(())
     }
 
-    async fn trigger(&self, db: &Database, id: &str, expiry: u64) -> Result<(), Box<dyn Error>> {
-        if expiry > Utc::now().timestamp() as u64 {
-            self.revoke(db, id, expiry).await?;
-            return Err(V1Error::TriggerNotFound.into());
-        }
-
+    async fn trigger(&self, db: &Database, _id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
         let accounts = get_accounts(db);
         let mut account = accounts
             .find_one(doc! {"_id": &self.id}, None)

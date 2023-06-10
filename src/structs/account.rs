@@ -1,8 +1,8 @@
 use goodmorning_bindings::services::v1::V1IdentifierType;
-use std::path::PathBuf;
+use std::{error::Error, path::PathBuf};
 
 use chrono::Utc;
-use mongodb::{bson::doc, Collection};
+use mongodb::{bson::doc, Collection, Database};
 use serde::{Deserialize, Serialize};
 use tokio::io;
 
@@ -14,7 +14,7 @@ pub struct Account {
     pub token: String,
 
     #[serde(rename(serialize = "_id", deserialize = "_id"))]
-    pub id: String,
+    pub id: i64,
     pub username: String,
 
     pub email: String,
@@ -26,12 +26,17 @@ pub struct Account {
 
 impl Account {
     /// Create new instance of self with default values, including a unique ID
-    pub fn new(username: String, password: &str, email: &str) -> Self {
+    pub async fn new(
+        username: String,
+        password: &str,
+        email: &str,
+        db: &Database,
+    ) -> Result<Self, Box<dyn Error>> {
         let now = Utc::now().timestamp() as u64;
-        let id = hex::encode(fastrand::u128(..).to_be_bytes());
+        let id = Counter::bump_get("id_counter", db).await?;
 
-        Self {
-            password_hash: Self::hash_with_id(password, &id),
+        Ok(Self {
+            password_hash: Self::hash_with_id(password, &id.to_string()),
             token: Self::token(),
 
             id,
@@ -42,7 +47,7 @@ impl Account {
 
             last_seen: now,
             created: now,
-        }
+        })
     }
 
     /// Checks if password matches
@@ -55,7 +60,7 @@ impl Account {
         EmailVerification {
             username: self.username.clone(),
             email: self.email.clone(),
-            id: self.id.clone(),
+            id: self.id,
         }
     }
 
@@ -95,12 +100,12 @@ impl Account {
         identifier_type: &IdentifierType,
         identifier: String,
         collection: &Collection<Self>,
-    ) -> Result<Option<Self>, mongodb::error::Error> {
-        match identifier_type {
-            IdentifierType::Id => Account::find_by_id(&identifier, collection).await,
-            IdentifierType::Email => Account::find_by_email(&identifier, collection).await,
-            IdentifierType::Username => Account::find_by_username(identifier, collection).await,
-        }
+    ) -> Result<Option<Self>, Box<dyn Error>> {
+        Ok(match identifier_type {
+            IdentifierType::Id => Account::find_by_id(identifier.parse()?, collection).await?,
+            IdentifierType::Email => Account::find_by_email(&identifier, collection).await?,
+            IdentifierType::Username => Account::find_by_username(identifier, collection).await?,
+        })
     }
 }
 
@@ -137,7 +142,7 @@ impl Account {
     }
 
     fn hash(&self, password: &str) -> String {
-        Self::hash_with_id(password, &self.id)
+        Self::hash_with_id(password, &self.id.to_string())
     }
 
     fn token() -> String {
@@ -154,9 +159,9 @@ impl Account {
     }
 }
 
-impl CollectionItem for Account {
-    fn id(&self) -> &str {
-        &self.id
+impl CollectionItem<i64> for Account {
+    fn id(&self) -> i64 {
+        self.id
     }
 }
 

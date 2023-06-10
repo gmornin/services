@@ -7,7 +7,7 @@ use crate::{functions::*, structs::*, *};
 
 use goodmorning_bindings::services::v1::{V1Error, V1PathOnly, V1Response};
 
-#[get("/touch")]
+#[post("/touch")]
 pub async fn touch(post: Json<V1PathOnly>) -> HttpResponse {
     from_res(touch_task(post).await)
 }
@@ -30,11 +30,11 @@ async fn touch_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>
     }
 
     let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(&account.id)
+        .join(account.id.to_string())
         .join(post.path.trim_start_matches('/'));
 
-    if !fs::try_exists(&path_buf).await? {
-        return Err(V1Error::FileNotFound.into());
+    if !editable(&path_buf) || has_dotdot(&path_buf) {
+        return Err(V1Error::PermissionDenied.into());
     }
 
     if fs::try_exists(&path_buf).await? {
@@ -43,7 +43,5 @@ async fn touch_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>
 
     fs::File::create(path_buf).await?;
 
-    Ok(V1Response::FileItemCreated {
-        path: format!("/{}/{}", account.id, post.path),
-    })
+    Ok(V1Response::FileItemCreated)
 }

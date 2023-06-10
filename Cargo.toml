@@ -30,7 +30,7 @@ actix-files = "0.6"
 actix-extensible-rate-limit = "0.2"
 sudo = "0.6"
 # goodmorning-bindings = {path = "../goodmorning-bindings", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
-goodmorning-bindings = {git = "https://github.com/goodmorning-network/rust-bindings", rev = "63e5fb5", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
+goodmorning-bindings = {git = "https://github.com/goodmorning-network/rust-bindings", rev = "57d3ffd", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
 lazy_static = "1.4"
 once_cell = "1.18"
 

@@ -1,7 +1,7 @@
-use mongodb::{options::ClientOptions, Client, Collection, Database};
+use mongodb::{bson::Document, options::ClientOptions, Client, Collection, Database};
 use std::env;
 
-use crate::structs::{Account, Trigger};
+use crate::structs::{Account, Counter, Trigger};
 
 // /// Gets `Client` with host at `MONGO_HOST`
 // pub async fn get_client() -> Client {
@@ -42,4 +42,12 @@ pub fn get_accounts(db: &Database) -> Collection<Account> {
 /// Gets `triggers` collection
 pub fn get_triggers(db: &Database) -> Collection<Trigger> {
     db.collection("triggers")
+}
+
+pub fn get_counters(db: &Database) -> Collection<Counter> {
+    db.collection("counters")
+}
+
+pub fn get_counters_doc(db: &Database) -> Collection<Document> {
+    db.collection("counters")
 }
