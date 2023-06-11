@@ -15,6 +15,11 @@ async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {
     let accounts = get_accounts(DATABASE.get().unwrap());
     let triggers = get_triggers(DATABASE.get().unwrap());
 
+    let re = regex::Regex::new(r"^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$").unwrap();
+    if !re.is_match(&post.username) || post.username.len() > 32 || post.username.len() < 3 {
+        return Err(V1Error::InvalidUsername.into());
+    }
+
     if Account::find_by_username(post.username.clone(), &accounts)
         .await?
         .is_some()
