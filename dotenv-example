@@ -1,4 +1,4 @@
-SELF_ADDR=http://localhost:8080/api/services/v1/trigger/use/
+SELF_ADDR=https://siriusmart.duckdns.org
 
 MONGO_HOST=mongodb://localhost:27017
 

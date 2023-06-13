@@ -5,7 +5,7 @@
 use mongodb::Database;
 
 use crate::{
-    functions::{get_client, get_prod_database},
+    functions::{get_client, get_database},
     structs::StorageLimits,
 };
 use once_cell::sync::OnceCell;
@@ -17,8 +17,12 @@ pub static SELF_ADDR: OnceCell<String> = OnceCell::new();
 pub static STORAGE_LIMITS: OnceCell<StorageLimits> = OnceCell::new();
 pub static EMAIL_VERIFICATION_DURATION: OnceCell<Duration> = OnceCell::new();
 pub static DATABASE: OnceCell<Database> = OnceCell::new();
+pub static MONGO_HOST: OnceCell<String> = OnceCell::new();
+pub static DB_NAME: OnceCell<String> = OnceCell::new();
 
 pub async fn init() {
+    MONGO_HOST.set(env::var("MONGO_HOST").unwrap()).unwrap();
+    DB_NAME.set(env::var("DB_NAME").unwrap()).unwrap();
     STORAGE.set(env::var("STORAGE_PATH").unwrap()).unwrap();
     USERCONTENT
         .set(env::var("USERCONTENT_PATH").unwrap())
@@ -37,9 +41,7 @@ pub async fn init() {
             env::var("VERIFICATION_TIMEFRAME").unwrap().parse().unwrap(),
         ))
         .unwrap();
-    DATABASE
-        .set(get_prod_database(&get_client().await))
-        .unwrap();
+    DATABASE.set(get_database(&get_client().await)).unwrap();
 }
 
 // lazy_static! {

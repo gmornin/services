@@ -22,6 +22,9 @@ pub struct Account {
 
     pub last_seen: u64,
     pub created: u64,
+
+    #[serde(default)]
+    pub services: Vec<GMServices>,
 }
 
 impl Account {
@@ -47,6 +50,8 @@ impl Account {
 
             last_seen: now,
             created: now,
+
+            services: Vec::new(),
         })
     }
 

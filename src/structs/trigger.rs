@@ -73,14 +73,14 @@ impl Trigger {
 
     pub fn use_url(id: &str) -> String {
         format!(
-            "{}/api/services/v1/trigger/use/{id}",
+            "{}/api/triggers/v1/use/{id}",
             SELF_ADDR.get().unwrap().as_str()
         )
     }
 
     pub fn revoke_url(id: &str) -> String {
         format!(
-            "{}/api/services/v1/trigger/revoke/{id}",
+            "{}/api/triggers/v1/revoke/{id}",
             SELF_ADDR.get().unwrap().as_str()
         )
     }

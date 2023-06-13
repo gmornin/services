@@ -1,14 +1,10 @@
-
 use actix_web::{
     middleware::Logger,
-    web::{self, Data},
+    web::{self},
     App, HttpServer,
 };
 use dotenv::dotenv;
-use goodmorning_services::{
-    functions::{get_client, get_prod_database},
-    init as valinit, *,
-};
+use goodmorning_services::{init as valinit, *};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use simplelog::*;
@@ -54,15 +50,6 @@ async fn main() {
 
     let config = load_rustls_config();
 
-    let db = get_prod_database(&get_client().await);
-
-    // let storage_limits = StorageLimits {
-    //     _1: env::var("STORAGE_LIMIT_1")
-    //         .expect("cannot find `STORAGE_LIMIT_1` in env")
-    //         .parse()
-    //         .expect("cannot parse STORAGE_LIMIT_1 to u64"),
-    // };
-
     HttpServer::new(move || {
         // let backend = InMemoryBackend::builder().build();
         // let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
@@ -73,10 +60,9 @@ async fn main() {
             .service(api::scope())
             .route("/", web::get().to(pong))
             .wrap(Logger::default())
-            .app_data(Data::new(db.clone()))
-            // .app_data(Data::new(EMAIL_VERIFICATION_DURATION))
-            // .app_data(Data::new(storage_limits))
-            // .wrap(middleware)
+        // .app_data(Data::new(EMAIL_VERIFICATION_DURATION))
+        // .app_data(Data::new(storage_limits))
+        // .wrap(middleware)
     })
     .bind(("0.0.0.0", 80))
     .expect("cannot bind to port")
