@@ -3,4 +3,11 @@ authors = ["Siriusmart"]
 language = "en"
 multilingual = false
 src = "src"
-title = "Goodmorning Services"
+title = "Goodmorning Services API Documentation"
+description = "API documentation for Goodmorning Services"
+
+[output.html]
+default-theme = "ayu"
+git-repository-url = "https://github.com/goodmorning-network/services/tree/master/docs"
+edit-url-template = "https://github.com/goodmorning-network/services/edit/master/docs/{path}"
+

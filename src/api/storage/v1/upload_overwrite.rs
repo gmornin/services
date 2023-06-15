@@ -74,6 +74,21 @@ async fn upload_overwrite_task(
 
     let data = bytes_from_multipart(payload).await?;
 
+    let expected = MIME_DB
+        .get()
+        .unwrap()
+        .get_mime_types_from_file_name(path_buf.file_name().unwrap().to_str().unwrap());
+    match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
+        Some((mime, _)) if !expected.is_empty() && !expected.contains(&mime) => {
+            return Err(V1Error::FileTypeMismatch {
+                expected: expected[0].to_string(),
+                got: mime.to_string(),
+            }
+            .into());
+        }
+        _ => {}
+    }
+
     file.write_all(&data).await?;
 
     Ok(V1Response::FileItemCreated)

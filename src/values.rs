@@ -3,6 +3,7 @@
 // pub const EMAIL_VERIFICATION_DURATION: Duration = Duration::from_secs(3600);
 
 use mongodb::Database;
+use xdg_mime::SharedMimeInfo;
 
 use crate::{
     functions::{get_client, get_database},
@@ -19,9 +20,15 @@ pub static EMAIL_VERIFICATION_DURATION: OnceCell<Duration> = OnceCell::new();
 pub static DATABASE: OnceCell<Database> = OnceCell::new();
 pub static MONGO_HOST: OnceCell<String> = OnceCell::new();
 pub static DB_NAME: OnceCell<String> = OnceCell::new();
+pub static PFP_LIMIT: OnceCell<u64> = OnceCell::new();
+pub static MIME_DB: OnceCell<SharedMimeInfo> = OnceCell::new();
 
 pub async fn init() {
+    MIME_DB.set(SharedMimeInfo::new()).ok().unwrap();
     MONGO_HOST.set(env::var("MONGO_HOST").unwrap()).unwrap();
+    PFP_LIMIT
+        .set(env::var("PFP_LIMIT").unwrap().parse::<u64>().unwrap())
+        .unwrap();
     DB_NAME.set(env::var("DB_NAME").unwrap()).unwrap();
     STORAGE.set(env::var("STORAGE_PATH").unwrap()).unwrap();
     USERCONTENT
@@ -43,17 +50,3 @@ pub async fn init() {
         .unwrap();
     DATABASE.set(get_database(&get_client().await)).unwrap();
 }
-
-// lazy_static! {
-// pub static ref STORAGE: String = env::var("STORAGE_PATH").unwrap();
-// pub static ref USERCONTENT: String = env::var("USERCONTENT_PATH").unwrap();
-// pub static ref SELF_ADDR: String = env::var("SELF_ADDR").unwrap();
-// pub static ref STORAGE_LIMITS: StorageLimits = StorageLimits {
-//     _1: env::var("STORAGE_LIMIT_1")
-//         .expect("cannot find `STORAGE_LIMIT_1` in env")
-//         .parse()
-//         .expect("cannot parse STORAGE_LIMIT_1 to u64"),
-// };
-//     pub static ref EMAIL_VERIFICATION_DURATION: Duration = Duration::from_secs(env::var("EMAIL_VERIFICATION_DURATION").unwrap().parse().unwrap());
-//     pub static ref DATABASE: Database = get_prod_database(&get_client());
-// }

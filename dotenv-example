@@ -11,6 +11,7 @@ SMTP_FROM=GoodMorningTex<example@gmail.com>
 
 VERIFICATION_TIMEFRAME=3600
 STORAGE_LIMIT_1=536870912
+PFP_LIMIT=2097152
 
 CERT_CHAIN=Path to cert chain e.g. /etc/letsencrypt/live/siriusmart.duckdns.org/fullchain.pem
 CERT_KEY=Path to cert key e.g. /etc/letsencrypt/live/siriusmart.duckdns.org/privkey.pem
