@@ -1,6 +1,6 @@
 use actix_multipart::Multipart;
 use actix_web::{web::Path, *};
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
@@ -38,9 +38,7 @@ async fn upload_overwrite_task(
         });
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id.to_string())
-        .join(path.trim_start_matches('/'));
+    let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
 
     if !editable(&path_buf) || has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

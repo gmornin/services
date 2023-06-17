@@ -1,4 +1,4 @@
-use std::{error::Error, path::PathBuf, time::UNIX_EPOCH};
+use std::{error::Error, time::UNIX_EPOCH};
 
 use actix_files::NamedFile;
 use actix_web::{routes, web, HttpRequest, HttpResponse};
@@ -9,15 +9,14 @@ use goodmorning_bindings::{
 use tokio::fs;
 
 use crate::{
-    functions::{has_dotdot, is_bson},
+    functions::{get_user_dir, has_dotdot, is_bson},
     structs::{ItemVisibility, Visibilities, Visibility},
-    *,
 };
 
 #[routes]
 #[get("/id/{id}/{path:.*}")]
 #[get("/{id}/{path:.*}")]
-pub async fn by_id(path: web::Path<(u64, String)>, req: HttpRequest) -> HttpResponse {
+pub async fn by_id(path: web::Path<(i64, String)>, req: HttpRequest) -> HttpResponse {
     match fetch(path, &req).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
@@ -25,13 +24,11 @@ pub async fn by_id(path: web::Path<(u64, String)>, req: HttpRequest) -> HttpResp
 }
 
 pub async fn fetch(
-    path: web::Path<(u64, String)>,
+    path: web::Path<(i64, String)>,
     req: &HttpRequest,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let (id, path) = path.into_inner();
-    let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(id.to_string())
-        .join(path.trim_start_matches('/'));
+    let path = get_user_dir(id, None).join(path.trim_start_matches('/'));
 
     if has_dotdot(&path) || is_bson(&path) {
         return Err(V1Error::PermissionDenied.into());

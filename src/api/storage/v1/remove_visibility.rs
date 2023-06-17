@@ -1,6 +1,6 @@
 use actix_web::{web::Json, *};
 
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 use crate::{functions::*, structs::*, *};
 
@@ -28,9 +28,7 @@ async fn remove_visibility_task(post: Json<V1PathOnly>) -> Result<V1Response, Bo
         });
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id.to_string())
-        .join(post.path.trim_start_matches('/'));
+    let path_buf = get_user_dir(account.id, None).join(post.path.trim_start_matches('/'));
 
     if !editable(&path_buf) || has_dotdot(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

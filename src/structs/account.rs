@@ -1,12 +1,12 @@
 use goodmorning_bindings::services::v1::V1IdentifierType;
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 use chrono::Utc;
 use mongodb::{bson::doc, Collection, Database};
 use serde::{Deserialize, Serialize};
 use tokio::io;
 
-use crate::{functions::*, structs::*, traits::*, *};
+use crate::{functions::*, structs::*, traits::*};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Account {
@@ -126,15 +126,11 @@ impl Account {
         remove: Option<u64>,
     ) -> io::Result<bool> {
         if extra > remove {
-            Ok(dir_size(&PathBuf::from(&format!(
-                "{}/{}",
-                USERCONTENT.get().unwrap().as_str(),
-                self.id
-            )))
-            .await?
-                + extra.unwrap_or_default()
-                - remove.unwrap_or_default()
-                > self.storage_limits(limits))
+            Ok(
+                dir_size(&get_user_dir(self.id, None)).await? + extra.unwrap_or_default()
+                    - remove.unwrap_or_default()
+                    > self.storage_limits(limits),
+            )
         } else {
             Ok(true)
         }

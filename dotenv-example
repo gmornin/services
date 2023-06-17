@@ -18,3 +18,5 @@ CERT_KEY=Path to cert key e.g. /etc/letsencrypt/live/siriusmart.duckdns.org/priv
 
 STORAGE_PATH=/data/gm
 USERCONTENT_PATH=/data/gm/usercontent
+
+PFP_DEFAULT=assets/pfp-default.svg

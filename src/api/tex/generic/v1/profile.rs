@@ -11,6 +11,6 @@ async fn profile(id: web::Path<i64>) -> HttpResponse {
 
 async fn profile_task(id: web::Path<i64>) -> Result<V1Response, Box<dyn Error>> {
     Ok(V1Response::Profile {
-        profile: read_profile(*id, "gmt").await?,
+        profile: read_profile(*id, "tex").await?,
     })
 }

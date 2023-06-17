@@ -1,10 +1,10 @@
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 use goodmorning_bindings::{services::v1::V1Error, structs::Profile};
 use mongodb::bson;
 use tokio::{fs, io::AsyncWriteExt};
 
-use crate::USERCONTENT;
+use super::get_usersys_dir;
 
 pub fn validate_profile(profile: &Profile) -> Result<(), V1Error> {
     if profile.details.len() > 20 {
@@ -18,11 +18,7 @@ pub fn validate_profile(profile: &Profile) -> Result<(), V1Error> {
 }
 
 pub async fn save_profile(profile: &Profile, id: i64, service: &str) -> Result<(), Box<dyn Error>> {
-    let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(id.to_string())
-        .join(service)
-        .join(".system")
-        .join("profile.bson");
+    let path = get_usersys_dir(id, Some(service)).join("profile.bson");
 
     if !fs::try_exists(path.parent().unwrap()).await? {
         return Err(V1Error::NotCreated.into());
@@ -43,11 +39,7 @@ pub async fn save_profile(profile: &Profile, id: i64, service: &str) -> Result<(
 }
 
 pub async fn read_profile(id: i64, service: &str) -> Result<Profile, Box<dyn Error>> {
-    let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(id.to_string())
-        .join(service)
-        .join(".system")
-        .join("profile.bson");
+    let path = get_usersys_dir(id, Some(service)).join("profile.bson");
 
     if !fs::try_exists(path.parent().unwrap()).await? {
         return Err(V1Error::NotCreated.into());

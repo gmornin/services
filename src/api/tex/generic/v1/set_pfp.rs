@@ -1,4 +1,4 @@
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 use crate::{functions::*, structs::*, *};
 use actix_multipart::Multipart;
@@ -6,16 +6,12 @@ use actix_web::{post, web::Json, HttpRequest, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1ProfileOnly, V1Response};
 use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 
-#[post("/set-profile-image")]
-async fn set_profile_image(
-    post: Json<V1ProfileOnly>,
-    payload: Multipart,
-    req: HttpRequest,
-) -> HttpResponse {
-    from_res(set_profile_image_task(post, payload, req).await)
+#[post("/set-pfp")]
+async fn set_pfp(post: Json<V1ProfileOnly>, payload: Multipart, req: HttpRequest) -> HttpResponse {
+    from_res(set_pfp_task(post, payload, req).await)
 }
 
-async fn set_profile_image_task(
+async fn set_pfp_task(
     post: Json<V1ProfileOnly>,
     payload: Multipart,
     req: HttpRequest,
@@ -45,11 +41,7 @@ async fn set_profile_image_task(
         return Err(V1Error::FileTooLarge.into());
     }
 
-    let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id.to_string())
-        .join("gmt")
-        .join(".system")
-        .join("profile_image");
+    let path = get_usersys_dir(account.id, Some("tex")).join("pfp.png");
 
     let mut file = OpenOptions::new()
         .create(true)
@@ -60,17 +52,22 @@ async fn set_profile_image_task(
     let data = bytes_from_multipart(payload).await?;
 
     match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
-        Some((mime, _)) if mime != mime::IMAGE_PNG && mime != mime::IMAGE_JPEG => {
+        Some((mime, _)) if mime != mime::IMAGE_PNG => {
             return Err(V1Error::FileTypeMismatch {
                 expected: mime::IMAGE_PNG.to_string(),
                 got: mime.to_string(),
             }
             .into());
         }
-        _ => {}
+        Some(_) => file.write_all(&data).await?,
+        _ => {
+            return Err(V1Error::FileTypeMismatch {
+                expected: mime::IMAGE_PNG.to_string(),
+                got: String::from("unknown"),
+            }
+            .into());
+        }
     }
-
-    file.write_all(&data).await?;
 
     Ok(V1Response::ProfileUpdated)
 }

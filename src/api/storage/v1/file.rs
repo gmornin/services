@@ -1,7 +1,6 @@
 use actix_files::NamedFile;
 use actix_web::{web::Path, *};
 use std::error::Error;
-use std::path::PathBuf;
 use tokio::fs::{self, try_exists};
 
 use crate::{functions::*, structs::*, *};
@@ -34,9 +33,7 @@ async fn file_task(
         return Err(V1Error::NotVerified.into());
     }
 
-    let path_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id.to_string())
-        .join(path.trim_start_matches('/'));
+    let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
 
     if has_dotdot(&path_buf) || is_bson(&path_buf) {
         return Err(V1Error::PermissionDenied.into());

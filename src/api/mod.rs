@@ -1,8 +1,8 @@
 use actix_web::Scope;
 
 pub mod accounts;
-pub mod gmt;
 pub mod storage;
+pub mod tex;
 pub mod triggers;
 pub mod usercontent;
 
@@ -12,5 +12,5 @@ pub fn scope() -> Scope {
         .service(storage::scope())
         .service(triggers::scope())
         .service(usercontent::scope())
-        .service(gmt::scope())
+        .service(tex::scope())
 }

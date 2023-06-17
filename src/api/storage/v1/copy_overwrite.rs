@@ -1,8 +1,5 @@
 use actix_web::{web::Json, *};
-use std::{
-    error::Error,
-    path::{Path as FilePath, PathBuf},
-};
+use std::{error::Error, path::Path as FilePath};
 use tokio::{fs, io};
 
 use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
@@ -31,12 +28,8 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         });
     }
 
-    let to_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id.to_string())
-        .join(post.to.trim_start_matches('/'));
-    let from_buf = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(post.from_userid.to_string())
-        .join(post.from.trim_start_matches('/'));
+    let to_buf = get_user_dir(account.id, None).join(post.to.trim_start_matches('/'));
+    let from_buf = get_user_dir(account.id, None).join(post.from.trim_start_matches('/'));
 
     if !editable(&to_buf) || is_bson(&from_buf) || has_dotdot(&to_buf) || has_dotdot(&from_buf) {
         return Err(V1Error::PermissionDenied.into());

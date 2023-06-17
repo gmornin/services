@@ -1,4 +1,4 @@
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 use actix_web::{post, web::Json, HttpResponse};
@@ -23,10 +23,7 @@ async fn create_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Erro
         return Err(V1Error::AlreadyCreated.into());
     }
 
-    let path = PathBuf::from(USERCONTENT.get().unwrap().as_str())
-        .join(account.id.to_string())
-        .join("tex")
-        .join(".system");
+    let path = get_usersys_dir(account.id, Some("tex"));
     fs::create_dir_all(&path).await?;
 
     account.services.push(GMServices::Tex);
