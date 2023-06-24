@@ -12,8 +12,8 @@ pub async fn copy_overwrite(post: Json<V1FromTo>) -> HttpResponse {
 }
 
 async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(&post.token, &accounts).await? {
+    let accounts = ACCOUNTS.get().unwrap();
+    let account = match Account::find_by_token(&post.token, accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {

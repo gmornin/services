@@ -13,8 +13,8 @@ pub async fn diritems(path: Path<(String, String)>) -> HttpResponse {
 
 async fn diritems_task(path: Path<(String, String)>) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(&token, &accounts).await? {
+    let accounts = ACCOUNTS.get().unwrap();
+    let account = match Account::find_by_token(&token, accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };

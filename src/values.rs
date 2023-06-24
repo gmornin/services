@@ -2,12 +2,12 @@
 //
 // pub const EMAIL_VERIFICATION_DURATION: Duration = Duration::from_secs(3600);
 
-use mongodb::Database;
+use mongodb::{Collection, Database};
 use xdg_mime::SharedMimeInfo;
 
 use crate::{
-    functions::{get_client, get_database},
-    structs::StorageLimits,
+    functions::{get_accounts, get_client, get_counters, get_database, get_triggers},
+    structs::{Account, Counter, StorageLimits, Trigger},
 };
 use once_cell::sync::OnceCell;
 use std::{env, path::PathBuf, time::Duration};
@@ -23,6 +23,9 @@ pub static DB_NAME: OnceCell<String> = OnceCell::new();
 pub static PFP_LIMIT: OnceCell<u64> = OnceCell::new();
 pub static MIME_DB: OnceCell<SharedMimeInfo> = OnceCell::new();
 pub static PFP_DEFAULT: OnceCell<PathBuf> = OnceCell::new();
+pub static ACCOUNTS: OnceCell<Collection<Account>> = OnceCell::new();
+pub static TRIGGERS: OnceCell<Collection<Trigger>> = OnceCell::new();
+pub static COUNTERS: OnceCell<Collection<Counter>> = OnceCell::new();
 
 pub async fn init() {
     MIME_DB.set(SharedMimeInfo::new()).ok().unwrap();
@@ -53,4 +56,7 @@ pub async fn init() {
     PFP_DEFAULT
         .set(PathBuf::from(env::var("PFP_DEFAULT").unwrap()))
         .unwrap();
+    ACCOUNTS.set(get_accounts(DATABASE.get().unwrap())).unwrap();
+    TRIGGERS.set(get_triggers(DATABASE.get().unwrap())).unwrap();
+    COUNTERS.set(get_counters(DATABASE.get().unwrap())).unwrap();
 }

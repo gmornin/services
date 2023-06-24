@@ -11,10 +11,9 @@ async fn create(post: Json<V1TokenOnly>) -> HttpResponse {
 }
 
 async fn create_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let post = post.into_inner();
-    let accounts = get_accounts(DATABASE.get().unwrap());
+    let accounts = ACCOUNTS.get().unwrap();
 
-    let mut account = match Account::find_by_token(&post.token, &accounts).await? {
+    let mut account = match Account::find_by_token(&post.token, accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };
@@ -27,7 +26,7 @@ async fn create_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Erro
     fs::create_dir_all(&path).await?;
 
     account.services.push(GMServices::Tex);
-    account.save_replace(&accounts).await?;
+    account.save_replace(accounts).await?;
 
     Ok(V1Response::ServiceCreated)
 }

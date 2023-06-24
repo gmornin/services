@@ -12,8 +12,8 @@ pub async fn remove_visibility(post: Json<V1PathOnly>) -> HttpResponse {
 }
 
 async fn remove_visibility_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(&post.token, &accounts).await? {
+    let accounts = ACCOUNTS.get().unwrap();
+    let account = match Account::find_by_token(&post.token, accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {

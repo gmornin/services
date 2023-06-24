@@ -1,13 +1,13 @@
 use async_trait::async_trait;
 use dyn_clone::DynClone;
 use mongodb::Database;
-use std::error::Error;
+use std::{error::Error, fmt::Debug};
 
 #[async_trait]
 #[typetag::serde(tag = "type")]
 pub trait Triggerable
 where
-    Self: Send + DynClone + Sync,
+    Self: Send + DynClone + Sync + Debug,
 {
     async fn init(&self, _db: &Database, _id: &str, _expire: u64) -> Result<(), Box<dyn Error>> {
         Ok(())

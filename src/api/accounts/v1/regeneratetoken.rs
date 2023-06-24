@@ -12,10 +12,10 @@ async fn regenerate_token(post: Json<V1PasswordId>) -> HttpResponse {
 
 async fn regenerate_token_task(post: Json<V1PasswordId>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
-    let accounts = get_accounts(DATABASE.get().unwrap());
+    let accounts = ACCOUNTS.get().unwrap();
 
     let mut account =
-        match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier, &accounts)
+        match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier, accounts)
             .await?
         {
             Some(account) => account,
@@ -27,7 +27,7 @@ async fn regenerate_token_task(post: Json<V1PasswordId>) -> Result<V1Response, B
     }
 
     account.regeneratetoken();
-    account.save_replace(&accounts).await?;
+    account.save_replace(accounts).await?;
 
     Ok(V1Response::RegenerateToken {
         token: account.token.clone(),

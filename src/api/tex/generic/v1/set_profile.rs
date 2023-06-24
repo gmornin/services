@@ -10,10 +10,9 @@ async fn set_profile(post: Json<V1ProfileOnly>) -> HttpResponse {
 }
 
 async fn set_profile_task(post: Json<V1ProfileOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let post = post.into_inner();
-    let accounts = get_accounts(DATABASE.get().unwrap());
+    let accounts = ACCOUNTS.get().unwrap();
 
-    let account = match Account::find_by_token(&post.token, &accounts).await? {
+    let account = match Account::find_by_token(&post.token, accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };

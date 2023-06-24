@@ -5,7 +5,7 @@ use mongodb::bson::doc;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Counter {
     pub count: i64,
 }

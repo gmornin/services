@@ -16,10 +16,9 @@ async fn set_pfp_task(
     payload: Multipart,
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let post = post.into_inner();
-    let accounts = get_accounts(DATABASE.get().unwrap());
+    let accounts = ACCOUNTS.get().unwrap();
 
-    let account = match Account::find_by_token(&post.token, &accounts).await? {
+    let account = match Account::find_by_token(&post.token, accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };

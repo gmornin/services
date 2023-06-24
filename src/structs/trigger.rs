@@ -9,7 +9,7 @@ use std::error::Error;
 use std::time::Duration;
 
 /// Action that will only be performed when the trigger url is visited
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Trigger {
     /// Id of the trigger, for example when visited `localhost/trigger/{id}`, that action will be
     /// triggered

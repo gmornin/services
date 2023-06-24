@@ -17,8 +17,8 @@ pub async fn mkdir(post: Json<V1PathOnly>) -> Json<V1Response> {
 }
 
 async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = get_accounts(DATABASE.get().unwrap());
-    let account = match Account::find_by_token(token, &accounts).await? {
+    let accounts = ACCOUNTS.get().unwrap();
+    let account = match Account::find_by_token(token, accounts).await? {
         Some(account) => account,
         None => {
             return Ok(V1Response::Error {

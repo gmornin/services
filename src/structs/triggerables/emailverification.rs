@@ -15,7 +15,7 @@ use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
 use std::{env, error::Error};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EmailVerification {
     pub email: String,
     pub username: String,

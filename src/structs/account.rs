@@ -8,7 +8,7 @@ use tokio::io;
 
 use crate::{functions::*, structs::*, traits::*};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Account {
     password_hash: String,
     pub token: String,
