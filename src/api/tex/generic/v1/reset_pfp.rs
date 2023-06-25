@@ -24,11 +24,8 @@ async fn reset_pfp_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn E
 
     let path = get_usersys_dir(account.id, Some("tex")).join("pfp.png");
 
-    if !fs::try_exists(&path).await? {
-        return Ok(V1Response::NothingChanged);
-    }
-
+    if fs::try_exists(&path).await? {
     fs::remove_file(path).await?;
-
+    }
     Ok(V1Response::PfpReset)
 }

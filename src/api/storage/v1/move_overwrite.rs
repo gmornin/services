@@ -39,6 +39,10 @@ async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box
         return Err(V1Error::FileNotFound.into());
     }
 
+    if from_buf.extension() != to_buf.extension() {
+        return Err(V1Error::ExtensionMismatch.into());
+    }
+
     if fs::metadata(&to_buf).await?.is_dir() {
         fs::remove_dir_all(&to_buf).await?;
     } else {

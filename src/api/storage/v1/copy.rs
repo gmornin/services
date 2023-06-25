@@ -48,6 +48,10 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         return Err(V1Error::FileNotFound.into());
     }
 
+    if from_buf.extension() != to_buf.extension() {
+        return Err(V1Error::ExtensionMismatch.into());
+    }
+
     let metadata = fs::metadata(&from_buf).await?;
 
     if metadata.is_file() {

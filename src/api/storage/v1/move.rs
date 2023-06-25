@@ -43,6 +43,10 @@ async fn move_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error
         return Err(V1Error::FileNotFound.into());
     }
 
+    if from_buf.extension() != to_buf.extension() {
+        return Err(V1Error::ExtensionMismatch.into());
+    }
+
     fs::rename(&from_buf, &to_buf).await?;
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;

@@ -45,9 +45,16 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         return Err(V1Error::FileNotFound.into());
     }
 
+    if from_buf.extension() != to_buf.extension() {
+        return Err(V1Error::ExtensionMismatch.into());
+    }
+
     let metadata = fs::metadata(&from_buf).await?;
 
     if metadata.is_file() {
+    if from_buf.extension() != to_buf.extension() {
+        return Err(V1Error::ExtensionMismatch.into());
+    }
         if account
             .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
             .await?

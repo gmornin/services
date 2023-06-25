@@ -2,23 +2,23 @@ use std::error::Error;
 
 use crate::{functions::*, structs::*, *};
 use actix_multipart::Multipart;
-use actix_web::{post, web::Json, HttpRequest, HttpResponse};
-use goodmorning_bindings::services::v1::{V1Error, V1ProfileOnly, V1Response};
+use actix_web::{post, web::{Path}, HttpRequest, HttpResponse};
+use goodmorning_bindings::services::v1::{V1Error, V1Response};
 use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 
-#[post("/set-pfp")]
-async fn set_pfp(post: Json<V1ProfileOnly>, payload: Multipart, req: HttpRequest) -> HttpResponse {
-    from_res(set_pfp_task(post, payload, req).await)
+#[post("/set-pfp/{token}")]
+async fn set_pfp(token: Path<String>, payload: Multipart, req: HttpRequest) -> HttpResponse {
+    from_res(set_pfp_task(token, payload, req).await)
 }
 
 async fn set_pfp_task(
-    post: Json<V1ProfileOnly>,
+    token: Path<String>,
     payload: Multipart,
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let accounts = ACCOUNTS.get().unwrap();
 
-    let account = match Account::find_by_token(&post.token, accounts).await? {
+    let account = match Account::find_by_token(&token, accounts).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };
