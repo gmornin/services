@@ -4,6 +4,7 @@ mod create;
 mod pfp;
 mod profile;
 mod reset_pfp;
+mod reset_profile;
 mod set_pfp;
 mod set_profile;
 
@@ -18,4 +19,5 @@ pub fn scope() -> Scope {
         .service(pfp::pfp)
         .service(pfp::pfp_name)
         .service(reset_pfp::reset_pfp)
+        .service(reset_profile::reset_pf)
 }

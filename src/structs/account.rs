@@ -20,7 +20,8 @@ pub struct Account {
     pub email: String,
     pub verified: bool,
 
-    pub last_seen: u64,
+    #[serde(default)]
+    pub status: String,
     pub created: u64,
 
     #[serde(default)]
@@ -48,7 +49,7 @@ impl Account {
             email: email.to_lowercase(),
             verified: false,
 
-            last_seen: now,
+            status: String::new(),
             created: now,
 
             services: Vec::new(),
