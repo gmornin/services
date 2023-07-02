@@ -21,7 +21,7 @@ async fn reset_profile_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<d
         return Err(V1Error::NotCreated.into());
     }
 
-    reset_profile(account.id, "tex").await?;
+    reset_profile(account.id, GMServices::Tex).await?;
 
     Ok(V1Response::ProfileUpdated)
 }

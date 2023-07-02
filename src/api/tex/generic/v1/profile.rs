@@ -1,6 +1,11 @@
 use std::error::Error;
 
-use crate::{functions::*, structs::Account, traits::CollectionItem, ACCOUNTS};
+use crate::{
+    functions::*,
+    structs::{Account, GMServices},
+    traits::CollectionItem,
+    ACCOUNTS,
+};
 use actix_web::{get, web, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
@@ -14,7 +19,7 @@ async fn profile_task(id: web::Path<i64>) -> Result<V1Response, Box<dyn Error>> 
         Some(account) => account,
         None => return Err(V1Error::NoSuchUser.into()),
     };
-    let profile_customisable = read_profile(account.id, "tex").await?;
+    let profile_customisable = read_profile(account.id, GMServices::Tex).await?;
 
     Ok(V1Response::Profile {
         profile: profile_customisable,
@@ -33,7 +38,7 @@ async fn profile_by_name_task(name: web::Path<String>) -> Result<V1Response, Box
         Some(account) => account,
         None => return Err(V1Error::NoSuchUser.into()),
     };
-    let profile_customisable = read_profile(account.id, "tex").await?;
+    let profile_customisable = read_profile(account.id, GMServices::Tex).await?;
 
     Ok(V1Response::Profile {
         profile: profile_customisable,
@@ -47,7 +52,7 @@ async fn profile_only(id: web::Path<i64>) -> HttpResponse {
 }
 
 async fn profile_only_task(id: web::Path<i64>) -> Result<V1Response, Box<dyn Error>> {
-    let profile_customisable = read_profile(*id, "tex").await?;
+    let profile_customisable = read_profile(*id, GMServices::Tex).await?;
 
     Ok(V1Response::ProfileOnly {
         profile: profile_customisable,

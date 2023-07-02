@@ -15,7 +15,7 @@ async fn pfp(id: web::Path<i64>, req: HttpRequest) -> HttpResponse {
 }
 
 async fn pfp_task(id: web::Path<i64>, req: HttpRequest) -> Result<HttpResponse, Box<dyn Error>> {
-    let path = get_usersys_dir(*id, Some("tex")).join("pfp.png");
+    let path = get_usersys_dir(*id, Some(crate::structs::GMServices::Tex)).join("pfp.png");
 
     if !fs::try_exists(path.parent().unwrap()).await? {
         return Ok(from_res::<V1Response>(Err(V1Error::NotCreated.into())));
@@ -52,7 +52,7 @@ async fn pfp_name_task(
         return Ok(from_res::<V1Response>(Err(V1Error::NotCreated.into())));
     }
 
-    let path = get_usersys_dir(account.id, Some("tex")).join("pfp.png");
+    let path = get_usersys_dir(account.id, Some(crate::structs::GMServices::Tex)).join("pfp.png");
 
     if !fs::try_exists(&path).await? {
         return Ok(NamedFile::open_async(PFP_DEFAULT.get().unwrap())

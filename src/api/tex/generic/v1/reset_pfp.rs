@@ -22,7 +22,7 @@ async fn reset_pfp_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn E
         return Err(V1Error::NotCreated.into());
     }
 
-    let path = get_usersys_dir(account.id, Some("tex")).join("pfp.png");
+    let path = get_usersys_dir(account.id, Some(GMServices::Tex)).join("pfp.png");
 
     if fs::try_exists(&path).await? {
         fs::remove_file(path).await?;

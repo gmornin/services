@@ -7,7 +7,7 @@ use goodmorning_bindings::{
 use mongodb::bson;
 use tokio::{fs, io::AsyncWriteExt};
 
-use crate::structs::Account;
+use crate::structs::{Account, GMServices};
 
 use super::get_usersys_dir;
 
@@ -32,7 +32,7 @@ pub fn validate_profile(profile: &ProfileCustomisable) -> Result<(), V1Error> {
 pub async fn save_profile(
     profile: &ProfileCustomisable,
     id: i64,
-    service: &str,
+    service: GMServices,
 ) -> Result<(), Box<dyn Error>> {
     let path = get_usersys_dir(id, Some(service)).join("profile.bson");
 
@@ -54,13 +54,16 @@ pub async fn save_profile(
     Ok(())
 }
 
-pub async fn reset_profile(id: i64, service: &str) -> Result<(), Box<dyn Error>> {
+pub async fn reset_profile(id: i64, service: GMServices) -> Result<(), Box<dyn Error>> {
     let path = get_usersys_dir(id, Some(service)).join("profile.bson");
 
     Ok(fs::remove_file(path).await?)
 }
 
-pub async fn read_profile(id: i64, service: &str) -> Result<ProfileCustomisable, Box<dyn Error>> {
+pub async fn read_profile(
+    id: i64,
+    service: GMServices,
+) -> Result<ProfileCustomisable, Box<dyn Error>> {
     let path = get_usersys_dir(id, Some(service)).join("profile.bson");
 
     if !fs::try_exists(path.parent().unwrap()).await? {

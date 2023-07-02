@@ -18,3 +18,5 @@ mod from_res;
 pub use from_res::*;
 mod profile;
 pub use profile::*;
+mod fs;
+pub use fs::*;

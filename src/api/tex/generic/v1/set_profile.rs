@@ -51,7 +51,7 @@ async fn set_profile_task(post: Json<V1ProfileOnly>) -> Result<V1Response, Box<d
         }
     }
 
-    save_profile(&post.profile, account.id, "tex").await?;
+    save_profile(&post.profile, account.id, GMServices::Tex).await?;
 
     Ok(V1Response::ProfileUpdated)
 }

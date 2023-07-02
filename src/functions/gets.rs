@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use mongodb::{bson::Document, options::ClientOptions, Client, Collection, Database};
 
 use crate::{
-    structs::{Account, Counter, Trigger},
+    structs::{Account, Counter, GMServices, Trigger},
     DB_NAME, MONGO_HOST, USERCONTENT,
 };
 
@@ -40,14 +40,14 @@ pub fn get_counters_doc(db: &Database) -> Collection<Document> {
     db.collection("counters")
 }
 
-pub fn get_user_dir(id: i64, service: Option<&str>) -> PathBuf {
+pub fn get_user_dir(id: i64, service: Option<GMServices>) -> PathBuf {
     let mut path = USERCONTENT.get().unwrap().join(id.to_string());
     if let Some(service) = service {
-        path.push(service);
+        path.push(service.as_str());
     }
     path
 }
 
-pub fn get_usersys_dir(id: i64, service: Option<&str>) -> PathBuf {
+pub fn get_usersys_dir(id: i64, service: Option<GMServices>) -> PathBuf {
     get_user_dir(id, service).join(".system")
 }

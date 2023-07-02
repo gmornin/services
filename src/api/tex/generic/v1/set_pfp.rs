@@ -40,7 +40,7 @@ async fn set_pfp_task(
         return Err(V1Error::FileTooLarge.into());
     }
 
-    let path = get_usersys_dir(account.id, Some("tex")).join("pfp.png");
+    let path = get_usersys_dir(account.id, Some(GMServices::Tex)).join("pfp.png");
 
     let mut file = OpenOptions::new()
         .create(true)
