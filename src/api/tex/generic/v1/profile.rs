@@ -3,7 +3,6 @@ use std::error::Error;
 use crate::{
     functions::*,
     structs::{Account, GMServices},
-    traits::CollectionItem,
     ACCOUNTS,
 };
 use actix_web::{get, web, HttpResponse};
@@ -15,10 +14,7 @@ async fn profile(id: web::Path<i64>) -> HttpResponse {
 }
 
 async fn profile_task(id: web::Path<i64>) -> Result<V1Response, Box<dyn Error>> {
-    let account = match Account::find_by_id(*id, ACCOUNTS.get().unwrap()).await? {
-        Some(account) => account,
-        None => return Err(V1Error::NoSuchUser.into()),
-    };
+    let account = Account::v1_get_by_id(*id).await?.v1_contains(&GMServices::Tex)?;
     let profile_customisable = read_profile(account.id, GMServices::Tex).await?;
 
     Ok(V1Response::Profile {
@@ -46,7 +42,7 @@ async fn profile_by_name_task(name: web::Path<String>) -> Result<V1Response, Box
     })
 }
 
-#[get("/profile-only/{id}")]
+#[get("/profile-only/id/{id}")]
 async fn profile_only(id: web::Path<i64>) -> HttpResponse {
     from_res(profile_only_task(id).await)
 }

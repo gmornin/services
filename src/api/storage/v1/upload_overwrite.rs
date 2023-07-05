@@ -25,21 +25,7 @@ async fn upload_overwrite_task(
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let accounts = ACCOUNTS.get().unwrap();
-    let account = match Account::find_by_token(&token, accounts).await? {
-        Some(account) => account,
-        None => {
-            return Ok(V1Response::Error {
-                kind: V1Error::InvalidToken,
-            })
-        }
-    };
-
-    if !account.verified {
-        return Ok(V1Response::Error {
-            kind: V1Error::NotVerified,
-        });
-    }
+    let account = Account::v1_get_by_token(&token).await?.v1_restrict_verified()?;
 
     let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
 

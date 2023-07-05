@@ -17,19 +17,14 @@ async fn simple_task(
     post: Json<V1Compile>,
     jobs: web::Data<Jobs>,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = ACCOUNTS.get().unwrap();
-
-    let account = match Account::find_by_token(&post.token, accounts).await? {
-        Some(account) => account,
-        None => return Err(V1Error::InvalidToken.into()),
-    };
-
-    if !account.services.contains(&GMServices::Tex) {
-        return Err(V1Error::NotCreated.into());
-    }
+    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
 
     let source =
         get_user_dir(account.id, Some(GMServices::Tex)).join(post.path.trim_start_matches('/'));
+
+    if has_dotdot(&source) && !editable(&source) {
+        return Err(V1Error::PermissionDenied.into());
+    }
 
     let res = match (post.from, post.to) {
         (FromFormat::Markdown, ToFormat::Html) => jobs
@@ -42,8 +37,7 @@ async fn simple_task(
                 },
                 *MAX_CONCURRENT.get().unwrap(),
             )
-            .await
-            .unwrap(),
+            .await?,
     };
 
     Ok(res)

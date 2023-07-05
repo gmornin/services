@@ -1,8 +1,8 @@
-POST `/api/accounts/v1/rename`
+POST `/api/accounts/v1/set-status`
 
 ---
 
-Change username.
+Change user status.
 
 ## Request
 
@@ -19,13 +19,12 @@ Status code: `200`
 
 ```json
 {
-  "type": "renamed"
+  "type": "profile updated"
 }
 ```
 
 ## Possible errors
 
-- `invalid username`
 - `invalid token`
-- `password incorrect`
+- `exceeds maximum length`
 - `external`

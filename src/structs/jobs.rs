@@ -13,6 +13,7 @@ use tokio::{
     io::AsyncWriteExt,
     sync::oneshot::{self, Sender},
 };
+use log::*;
 
 #[derive(Default)]
 pub struct Jobs(pub Mutex<HashMap<i64, Arc<Mutex<Job>>>>);
@@ -57,6 +58,7 @@ impl Job {
         job: SingleJob,
     ) -> Result<V1Response, Box<dyn Error>> {
         let (tx, rx) = oneshot::channel();
+        debug!("Queued job: {job:?}");
         let job = SingleJobWrapper { job, tx };
 
         {
@@ -76,7 +78,9 @@ impl Job {
             let arc = arc.clone();
 
             let _handle = tokio::task::spawn(async move {
+                debug!("Started job: {:?}", jobwrapper.job);
                 jobwrapper.job.task.run(jobwrapper.tx, job.id).await;
+                debug!("Finished job: {:?}", jobwrapper.job);
                 let mut unlocked = arc.lock().unwrap();
                 unlocked.done(jobwrapper.job.id).unwrap();
                 unlocked.bump(max_concurrent, &arc)
@@ -102,12 +106,14 @@ pub struct SingleJobWrapper {
     pub tx: Sender<Result<V1Response, V1Error>>,
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 pub struct SingleJob {
     pub task: SingleTask,
     pub id: u64,
 }
 
+#[derive(Debug)]
 #[derive(Clone)]
 pub enum SingleTask {
     Compile {

@@ -2,7 +2,7 @@ use actix_web::{web::Json, *};
 use std::error::Error;
 use tokio::fs;
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*};
 
 use goodmorning_bindings::services::v1::{V1Error, V1PathOnly, V1Response};
 
@@ -12,21 +12,7 @@ pub async fn delete(post: Json<V1PathOnly>) -> HttpResponse {
 }
 
 async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = ACCOUNTS.get().unwrap();
-    let account = match Account::find_by_token(&post.token, accounts).await? {
-        Some(account) => account,
-        None => {
-            return Ok(V1Response::Error {
-                kind: V1Error::InvalidToken,
-            })
-        }
-    };
-
-    if !account.verified {
-        return Ok(V1Response::Error {
-            kind: V1Error::NotVerified,
-        });
-    }
+    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?;
 
     let path_buf = get_user_dir(account.id, None).join(post.path.trim_start_matches('/'));
 

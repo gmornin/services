@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*};
 use actix_web::{post, web::Json, HttpResponse};
-use goodmorning_bindings::services::v1::{V1Error, V1Response, V1TokenOnly};
+use goodmorning_bindings::services::v1::{V1Response, V1TokenOnly};
 
 #[post("/reset-profile")]
 async fn reset_pf(post: Json<V1TokenOnly>) -> HttpResponse {
@@ -10,16 +10,7 @@ async fn reset_pf(post: Json<V1TokenOnly>) -> HttpResponse {
 }
 
 async fn reset_profile_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = ACCOUNTS.get().unwrap();
-
-    let account = match Account::find_by_token(&post.token, accounts).await? {
-        Some(account) => account,
-        None => return Err(V1Error::InvalidToken.into()),
-    };
-
-    if !account.services.contains(&GMServices::Tex) {
-        return Err(V1Error::NotCreated.into());
-    }
+    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
 
     reset_profile(account.id, GMServices::Tex).await?;
 

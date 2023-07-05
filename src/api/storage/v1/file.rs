@@ -3,7 +3,7 @@ use actix_web::{web::Path, *};
 use std::error::Error;
 use tokio::fs::{self, try_exists};
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*};
 
 use goodmorning_bindings::{
     services::v1::{V1Error, V1Response},
@@ -23,15 +23,7 @@ async fn file_task(
     req: &HttpRequest,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let accounts = ACCOUNTS.get().unwrap();
-    let account = match Account::find_by_token(&token, accounts).await? {
-        Some(account) => account,
-        None => return Err(V1Error::InvalidToken.into()),
-    };
-
-    if !account.verified {
-        return Err(V1Error::NotVerified.into());
-    }
+    let account = Account::v1_get_by_token(&token).await?.v1_restrict_verified()?;
 
     let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
 

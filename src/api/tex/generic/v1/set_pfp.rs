@@ -16,18 +16,7 @@ async fn set_pfp_task(
     payload: Multipart,
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let accounts = ACCOUNTS.get().unwrap();
-
-    let account = match Account::find_by_token(&token, accounts).await? {
-        Some(account) => account,
-        None => return Err(V1Error::InvalidToken.into()),
-    };
-
-    if !account.verified {
-        return Ok(V1Response::Error {
-            kind: V1Error::NotVerified,
-        });
-    }
+    let account = Account::v1_get_by_token(&token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
 
     if *PFP_LIMIT.get().unwrap()
         < req

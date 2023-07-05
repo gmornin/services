@@ -1,4 +1,4 @@
-use goodmorning_bindings::services::v1::V1IdentifierType;
+use goodmorning_bindings::services::v1::{V1IdentifierType, V1Error};
 use std::error::Error;
 
 use chrono::Utc;
@@ -6,7 +6,7 @@ use mongodb::{bson::doc, Collection, Database};
 use serde::{Deserialize, Serialize};
 use tokio::io;
 
-use crate::{functions::*, structs::*, traits::*};
+use crate::{functions::*, structs::*, traits::*, ACCOUNTS};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Account {
@@ -112,6 +112,46 @@ impl Account {
             IdentifierType::Email => Account::find_by_email(&identifier, collection).await?,
             IdentifierType::Username => Account::find_by_username(identifier, collection).await?,
         })
+    }
+}
+
+impl Account {
+    pub async fn v1_get_by_token(token: &str) -> Result<Self, Box<dyn Error>> {
+        match Account::find_by_token(token, ACCOUNTS.get().unwrap()).await? {
+            Some(acc) => Ok(acc),
+            None => Err(V1Error::InvalidToken.into()),
+        }
+    }
+
+    pub async fn v1_get_by_id(id: i64) -> Result<Self, Box<dyn Error>> {
+        match Account::find_by_id(id, ACCOUNTS.get().unwrap()).await? {
+            Some(acc) => Ok(acc),
+            None => Err(V1Error::InvalidToken.into()),
+        }
+    }
+
+    pub fn v1_restrict_verified(self) -> Result<Self, V1Error> {
+        if !self.verified {
+            return Err(V1Error::NotVerified);
+        }
+
+        Ok(self)
+    }
+
+    pub fn v1_contains(self, service: &GMServices) -> Result<Self, V1Error> {
+        if !self.services.contains(service) {
+            return Err(V1Error::NotCreated);
+        }
+
+        Ok(self)
+    }
+
+    pub fn v1_not_contains(self, service: &GMServices) -> Result<Self, V1Error> {
+        if self.services.contains(service) {
+            return Err(V1Error::AlreadyCreated);
+        }
+
+        Ok(self)
     }
 }
 

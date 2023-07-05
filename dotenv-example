@@ -1,6 +1,7 @@
 SELF_ADDR=https://siriusmart.duckdns.org
 
 MONGO_HOST=mongodb://localhost:27017
+DB_NAME=goodmorning-prod
 
 HASH_SALT=A string salt for hashing
 
@@ -20,3 +21,6 @@ STORAGE_PATH=/data/gm
 USERCONTENT_PATH=/data/gm/usercontent
 
 PFP_DEFAULT=assets/pfp-default.svg
+
+MAX_CONCURRENT=1
+QUEUE_LIMIT=99999

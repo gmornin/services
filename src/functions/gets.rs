@@ -1,10 +1,10 @@
-use std::path::PathBuf;
+use std::{path::PathBuf};
+
 
 use mongodb::{bson::Document, options::ClientOptions, Client, Collection, Database};
 
 use crate::{
-    structs::{Account, Counter, GMServices, Trigger},
-    DB_NAME, MONGO_HOST, USERCONTENT,
+    structs::{Account, Counter, GMServices, Trigger}, DB_NAME, MONGO_HOST, USERCONTENT,
 };
 
 pub async fn get_client() -> Client {
