@@ -3,6 +3,7 @@
 // pub const EMAIL_VERIFICATION_DURATION: Duration = Duration::from_secs(3600);
 
 use mongodb::{Collection, Database};
+
 use xdg_mime::SharedMimeInfo;
 
 use crate::{
@@ -26,6 +27,8 @@ pub static PFP_DEFAULT: OnceCell<PathBuf> = OnceCell::new();
 pub static ACCOUNTS: OnceCell<Collection<Account>> = OnceCell::new();
 pub static TRIGGERS: OnceCell<Collection<Trigger>> = OnceCell::new();
 pub static COUNTERS: OnceCell<Collection<Counter>> = OnceCell::new();
+pub static QUEUE_LIMIT: OnceCell<usize> = OnceCell::new();
+pub static MAX_CONCURRENT: OnceCell<usize> = OnceCell::new();
 
 pub async fn init() {
     MIME_DB.set(SharedMimeInfo::new()).ok().unwrap();
@@ -34,6 +37,12 @@ pub async fn init() {
         .set(env::var("PFP_LIMIT").unwrap().parse::<u64>().unwrap())
         .unwrap();
     DB_NAME.set(env::var("DB_NAME").unwrap()).unwrap();
+    QUEUE_LIMIT
+        .set(env::var("QUEUE_LIMIT").unwrap().parse().unwrap())
+        .unwrap();
+    MAX_CONCURRENT
+        .set(env::var("MAX_CONCURRENT").unwrap().parse().unwrap())
+        .unwrap();
     STORAGE.set(env::var("STORAGE_PATH").unwrap()).unwrap();
     USERCONTENT
         .set(PathBuf::from(env::var("USERCONTENT_PATH").unwrap()))

@@ -1,7 +1,10 @@
 use actix_multipart::Multipart;
 use actix_web::{web::Path, *};
 use std::error::Error;
-use tokio::{fs::OpenOptions, io::AsyncWriteExt};
+use tokio::{
+    fs::{self, OpenOptions},
+    io::AsyncWriteExt,
+};
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
@@ -56,7 +59,10 @@ async fn upload_overwrite_task(
                     .parse::<u64>()
                     .unwrap(),
             ),
-            Some(file_size(&path_buf).await?),
+            Some(match fs::metadata(&path_buf).await {
+                Ok(me) => me.len(),
+                Err(_) => 0,
+            }),
         )
         .await
         .unwrap()
@@ -64,20 +70,21 @@ async fn upload_overwrite_task(
         return Err(V1Error::FileTooLarge.into());
     }
 
-    let mut file = OpenOptions::new()
-        .write(true)
-        .open(&path_buf)
-        .await
-        .unwrap();
-
     let data = bytes_from_multipart(payload).await?;
 
     let expected = MIME_DB
         .get()
         .unwrap()
         .get_mime_types_from_file_name(path_buf.file_name().unwrap().to_str().unwrap());
+    let expected_collapsed = expected
+        .iter()
+        .map(|mime| mime_collapse(mime.essence_str()))
+        .collect::<Vec<_>>();
     match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
-        Some((mime, _)) if !expected.is_empty() && !expected.contains(&mime) => {
+        Some((mime, _))
+            if !expected.is_empty() && !expected_collapsed.contains(&mime.essence_str()) =>
+        {
+            println!("got: {mime} expected: {expected:?}");
             return Err(V1Error::FileTypeMismatch {
                 expected: expected[0].to_string(),
                 got: mime.to_string(),
@@ -86,6 +93,13 @@ async fn upload_overwrite_task(
         }
         _ => {}
     }
+
+    let mut file = OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&path_buf)
+        .await?;
 
     file.write_all(&data).await?;
 

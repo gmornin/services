@@ -68,20 +68,20 @@ async fn upload_task(
         return Err(V1Error::FileTooLarge.into());
     }
 
-    let mut file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .open(&path_buf)
-        .await?;
-
     let data = bytes_from_multipart(payload).await?;
 
     let expected = MIME_DB
         .get()
         .unwrap()
         .get_mime_types_from_file_name(path_buf.file_name().unwrap().to_str().unwrap());
+    let expected_collapsed = expected
+        .iter()
+        .map(|mime| mime_collapse(mime.essence_str()))
+        .collect::<Vec<_>>();
     match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
-        Some((mime, _)) if !expected.is_empty() && !expected.contains(&mime) => {
+        Some((mime, _))
+            if !expected.is_empty() && !expected_collapsed.contains(&mime.essence_str()) =>
+        {
             return Err(V1Error::FileTypeMismatch {
                 expected: expected[0].to_string(),
                 got: mime.to_string(),
@@ -90,6 +90,13 @@ async fn upload_task(
         }
         _ => {}
     }
+
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(&path_buf)
+        .await?;
 
     file.write_all(&data).await?;
 

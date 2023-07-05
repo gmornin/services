@@ -1,10 +1,10 @@
 use actix_web::{
     middleware::Logger,
-    web::{self},
+    web::{self, Data},
     App, HttpServer,
 };
 use dotenv::dotenv;
-use goodmorning_services::{init as valinit, *};
+use goodmorning_services::{init as valinit, structs::Jobs, *};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use simplelog::*;
@@ -49,6 +49,7 @@ async fn main() {
     .unwrap();
 
     let config = load_rustls_config();
+    let jobs: Data<Jobs> = Data::new(Jobs::default());
 
     HttpServer::new(move || {
         // let backend = InMemoryBackend::builder().build();
@@ -56,11 +57,12 @@ async fn main() {
         //     .real_ip_key()
         //     .build();
         // let middleware = RateLimiter::builder(backend, input).add_headers().build();
+
         App::new()
+            .app_data(jobs.clone())
             .service(api::scope())
             .route("/", web::get().to(pong))
             .wrap(Logger::default())
-        // .app_data(Data::new(EMAIL_VERIFICATION_DURATION))
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)
     })

@@ -20,3 +20,5 @@ mod profile;
 pub use profile::*;
 mod fs;
 pub use fs::*;
+mod mime_collapse;
+pub use mime_collapse::*;
