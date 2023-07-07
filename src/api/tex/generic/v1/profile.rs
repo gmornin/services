@@ -14,7 +14,9 @@ async fn profile(id: web::Path<i64>) -> HttpResponse {
 }
 
 async fn profile_task(id: web::Path<i64>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_id(*id).await?.v1_contains(&GMServices::Tex)?;
+    let account = Account::v1_get_by_id(*id)
+        .await?
+        .v1_contains(&GMServices::Tex)?;
     let profile_customisable = read_profile(account.id, GMServices::Tex).await?;
 
     Ok(V1Response::Profile {

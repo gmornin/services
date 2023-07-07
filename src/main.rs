@@ -13,7 +13,6 @@ use std::{
     env,
     fs::{self, File},
     io::BufReader,
-    path::PathBuf,
 };
 
 #[tokio::main]
@@ -38,11 +37,12 @@ async fn main() {
                 .create(true)
                 .write(true)
                 .truncate(true)
-                .open(format!(
-                    "{}/logs/services-{}.log",
-                    STORAGE.get().unwrap().as_str(),
-                    chrono::Utc::now()
-                ))
+                .open(
+                    STORAGE
+                        .get()
+                        .unwrap()
+                        .join(format!("logs/services-{}.log", chrono::Utc::now())),
+                )
                 .unwrap(),
         ),
     ])
@@ -111,7 +111,7 @@ fn load_rustls_config() -> rustls::ServerConfig {
 }
 
 fn init() {
-    let path = PathBuf::from(STORAGE.get().unwrap().as_str()).join("logs");
+    let path = STORAGE.get().unwrap().join("logs");
     if !path.exists() {
         fs::create_dir_all(path).unwrap();
     }

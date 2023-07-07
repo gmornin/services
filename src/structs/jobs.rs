@@ -8,12 +8,12 @@ use std::{
 };
 
 use goodmorning_bindings::services::v1::*;
+
 use tokio::{
     fs,
     io::AsyncWriteExt,
     sync::oneshot::{self, Sender},
 };
-use log::*;
 
 #[derive(Default)]
 pub struct Jobs(pub Mutex<HashMap<i64, Arc<Mutex<Job>>>>);
@@ -58,7 +58,6 @@ impl Job {
         job: SingleJob,
     ) -> Result<V1Response, Box<dyn Error>> {
         let (tx, rx) = oneshot::channel();
-        debug!("Queued job: {job:?}");
         let job = SingleJobWrapper { job, tx };
 
         {
@@ -78,9 +77,7 @@ impl Job {
             let arc = arc.clone();
 
             let _handle = tokio::task::spawn(async move {
-                debug!("Started job: {:?}", jobwrapper.job);
                 jobwrapper.job.task.run(jobwrapper.tx, job.id).await;
-                debug!("Finished job: {:?}", jobwrapper.job);
                 let mut unlocked = arc.lock().unwrap();
                 unlocked.done(jobwrapper.job.id).unwrap();
                 unlocked.bump(max_concurrent, &arc)
@@ -106,27 +103,31 @@ pub struct SingleJobWrapper {
     pub tx: Sender<Result<V1Response, V1Error>>,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SingleJob {
     pub task: SingleTask,
     pub id: u64,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum SingleTask {
     Compile {
         from: FromFormat,
         to: ToFormat,
         source: PathBuf,
+        user_path: PathBuf,
     },
 }
 
 impl SingleTask {
     async fn run(&self, tx: Sender<Result<V1Response, V1Error>>, taskid: u64) {
         let res = match self {
-            Self::Compile { from, to, source } => {
+            Self::Compile {
+                from,
+                to,
+                source,
+                user_path,
+            } => {
                 if !match fs::try_exists(&source).await {
                     Ok(b) => b,
                     Err(e) => {
@@ -142,7 +143,7 @@ impl SingleTask {
                 }
                 match (from, to) {
                     (FromFormat::Markdown, ToFormat::Html) => {
-                        markdown_to_html(source, taskid).await
+                        markdown_to_html(source, taskid, user_path).await
                     }
                 }
             }
@@ -162,7 +163,11 @@ impl SingleTask {
     }
 }
 
-async fn markdown_to_html(source: &Path, taskid: u64) -> Result<V1Response, Box<dyn Error>> {
+async fn markdown_to_html(
+    source: &Path,
+    taskid: u64,
+    user_path: &Path,
+) -> Result<V1Response, Box<dyn Error>> {
     if source.extension() != Some(OsStr::new("md")) {
         return Err(V1Error::ExtensionMismatch.into());
     }
@@ -171,7 +176,7 @@ async fn markdown_to_html(source: &Path, taskid: u64) -> Result<V1Response, Box<
     let mut buf = String::new();
     html::push_html(&mut buf, Parser::new_ext(&md, Options::all()));
 
-    let newfile = PathBuf::from(source).with_extension("html");
+    let newfile = source.with_extension("html");
     let mut file = fs::OpenOptions::new()
         .write(true)
         .truncate(true)
@@ -181,7 +186,11 @@ async fn markdown_to_html(source: &Path, taskid: u64) -> Result<V1Response, Box<
     file.write_all(buf.as_bytes()).await?;
     Ok(V1Response::Compiled {
         id: taskid,
-        newpath: newfile.to_str().unwrap().to_string(),
+        newpath: user_path
+            .with_extension("html")
+            .to_str()
+            .unwrap()
+            .to_string(),
         message: String::new(),
     })
 }

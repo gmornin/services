@@ -17,7 +17,9 @@ pub async fn mkdir(post: Json<V1PathOnly>) -> Json<V1Response> {
 }
 
 async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(token).await?.v1_restrict_verified()?;
+    let account = Account::v1_get_by_token(token)
+        .await?
+        .v1_restrict_verified()?;
 
     let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
 

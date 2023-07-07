@@ -11,7 +11,10 @@ async fn create(post: Json<V1TokenOnly>) -> HttpResponse {
 }
 
 async fn create_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let mut account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?.v1_not_contains(&GMServices::Tex)?;
+    let mut account = Account::v1_get_by_token(&post.token)
+        .await?
+        .v1_restrict_verified()?
+        .v1_not_contains(&GMServices::Tex)?;
 
     let path = get_usersys_dir(account.id, Some(GMServices::Tex));
     fs::create_dir_all(&path).await?;

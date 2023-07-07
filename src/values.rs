@@ -13,7 +13,7 @@ use crate::{
 use once_cell::sync::OnceCell;
 use std::{env, path::PathBuf, time::Duration};
 
-pub static STORAGE: OnceCell<String> = OnceCell::new();
+pub static STORAGE: OnceCell<PathBuf> = OnceCell::new();
 pub static USERCONTENT: OnceCell<PathBuf> = OnceCell::new();
 pub static SELF_ADDR: OnceCell<String> = OnceCell::new();
 pub static STORAGE_LIMITS: OnceCell<StorageLimits> = OnceCell::new();
@@ -43,9 +43,11 @@ pub async fn init() {
     MAX_CONCURRENT
         .set(env::var("MAX_CONCURRENT").unwrap().parse().unwrap())
         .unwrap();
-    STORAGE.set(env::var("STORAGE_PATH").unwrap()).unwrap();
+    STORAGE
+        .set(parse_path(env::var("STORAGE_PATH").unwrap()))
+        .unwrap();
     USERCONTENT
-        .set(PathBuf::from(env::var("USERCONTENT_PATH").unwrap()))
+        .set(parse_path(env::var("USERCONTENT_PATH").unwrap()))
         .unwrap();
     SELF_ADDR.set(env::var("SELF_ADDR").unwrap()).unwrap();
     STORAGE_LIMITS
@@ -68,4 +70,16 @@ pub async fn init() {
     ACCOUNTS.set(get_accounts(DATABASE.get().unwrap())).unwrap();
     TRIGGERS.set(get_triggers(DATABASE.get().unwrap())).unwrap();
     COUNTERS.set(get_counters(DATABASE.get().unwrap())).unwrap();
+}
+
+fn parse_path(mut s: String) -> PathBuf {
+    if s.starts_with('~') {
+        s = s.replacen(
+            '~',
+            dirs::home_dir().unwrap().as_os_str().to_str().unwrap(),
+            1,
+        );
+    }
+
+    PathBuf::from(s)
 }

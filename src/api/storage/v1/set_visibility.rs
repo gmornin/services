@@ -12,7 +12,9 @@ pub async fn set_visibility(post: Json<V1PathVisibility>) -> HttpResponse {
 }
 
 async fn set_visibility_task(post: Json<V1PathVisibility>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?;
+    let account = Account::v1_get_by_token(&post.token)
+        .await?
+        .v1_restrict_verified()?;
 
     let path_buf = get_user_dir(account.id, None).join(post.path.trim_start_matches('/'));
 

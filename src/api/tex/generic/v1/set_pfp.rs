@@ -16,7 +16,10 @@ async fn set_pfp_task(
     payload: Multipart,
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
+    let account = Account::v1_get_by_token(&token)
+        .await?
+        .v1_restrict_verified()?
+        .v1_contains(&GMServices::Tex)?;
 
     if *PFP_LIMIT.get().unwrap()
         < req

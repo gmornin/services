@@ -10,7 +10,10 @@ async fn reset_pf(post: Json<V1TokenOnly>) -> HttpResponse {
 }
 
 async fn reset_profile_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
+    let account = Account::v1_get_by_token(&post.token)
+        .await?
+        .v1_restrict_verified()?
+        .v1_contains(&GMServices::Tex)?;
 
     reset_profile(account.id, GMServices::Tex).await?;
 

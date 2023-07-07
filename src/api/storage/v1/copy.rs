@@ -11,7 +11,9 @@ pub async fn copy(post: Json<V1FromTo>) -> HttpResponse {
 }
 
 async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?;
+    let account = Account::v1_get_by_token(&post.token)
+        .await?
+        .v1_restrict_verified()?;
 
     let to_buf = get_user_dir(account.id, None).join(post.to.trim_start_matches('/'));
     let from_buf = get_user_dir(account.id, None).join(post.from.trim_start_matches('/'));

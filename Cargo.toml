@@ -37,6 +37,7 @@ xdg-mime = "0.3"
 mime = "0.3"
 actix-web-lab = "0.19"
 parking_lot = "0.12"
+dirs = "5.0"
 
 pulldown-cmark = "0.9"
 # markdown = "1.0.0-alpha"

@@ -13,7 +13,10 @@ async fn set_profile(post: Json<V1ProfileOnly>) -> HttpResponse {
 }
 
 async fn set_profile_task(post: Json<V1ProfileOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
+    let account = Account::v1_get_by_token(&post.token)
+        .await?
+        .v1_restrict_verified()?
+        .v1_contains(&GMServices::Tex)?;
 
     let profile = &post.profile;
 

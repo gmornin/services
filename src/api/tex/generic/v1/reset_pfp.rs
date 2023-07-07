@@ -11,7 +11,10 @@ async fn reset_pfp(post: Json<V1TokenOnly>) -> HttpResponse {
 }
 
 async fn reset_pfp_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token).await?.v1_restrict_verified()?.v1_contains(&GMServices::Tex)?;
+    let account = Account::v1_get_by_token(&post.token)
+        .await?
+        .v1_restrict_verified()?
+        .v1_contains(&GMServices::Tex)?;
 
     let path = get_usersys_dir(account.id, Some(GMServices::Tex)).join("pfp.png");
 

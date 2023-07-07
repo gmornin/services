@@ -1,4 +1,4 @@
-use goodmorning_bindings::services::v1::{V1IdentifierType, V1Error};
+use goodmorning_bindings::services::v1::{V1Error, V1IdentifierType};
 use std::error::Error;
 
 use chrono::Utc;
@@ -173,7 +173,7 @@ impl Account {
                     > self.storage_limits(limits),
             )
         } else {
-            Ok(true)
+            Ok(false)
         }
     }
 }

@@ -25,7 +25,9 @@ async fn upload_task(
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let account = Account::v1_get_by_token(&token).await?.v1_restrict_verified()?;
+    let account = Account::v1_get_by_token(&token)
+        .await?
+        .v1_restrict_verified()?;
 
     let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
 
@@ -56,25 +58,27 @@ async fn upload_task(
 
     let data = bytes_from_multipart(payload).await?;
 
-    let expected = MIME_DB
-        .get()
-        .unwrap()
-        .get_mime_types_from_file_name(path_buf.file_name().unwrap().to_str().unwrap());
-    let expected_collapsed = expected
-        .iter()
-        .map(|mime| mime_collapse(mime.essence_str()))
-        .collect::<Vec<_>>();
-    match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
-        Some((mime, _))
-            if !expected.is_empty() && !expected_collapsed.contains(&mime.essence_str()) =>
-        {
-            return Err(V1Error::FileTypeMismatch {
-                expected: expected[0].to_string(),
-                got: mime.to_string(),
+    if !data.is_empty() {
+        let expected = MIME_DB
+            .get()
+            .unwrap()
+            .get_mime_types_from_file_name(path_buf.file_name().unwrap().to_str().unwrap());
+        let expected_collapsed = expected
+            .iter()
+            .map(|mime| mime_collapse(mime.essence_str()))
+            .collect::<Vec<_>>();
+        match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
+            Some((mime, _))
+                if !expected.is_empty() && !expected_collapsed.contains(&mime.essence_str()) =>
+            {
+                return Err(V1Error::FileTypeMismatch {
+                    expected: expected[0].to_string(),
+                    got: mime.to_string(),
+                }
+                .into());
             }
-            .into());
+            _ => {}
         }
-        _ => {}
     }
 
     let mut file = OpenOptions::new()
