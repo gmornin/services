@@ -1,5 +1,6 @@
 use actix_web::Scope;
 
+mod change_password;
 mod create;
 mod delete;
 mod login;

@@ -4,4 +4,4 @@ I don't know why would anyone want to use it, but if you do, you will have to ma
 
 Requirements:
 - mongod running
-- .env present
+- edit (root) `~/.config/gm/` yml files

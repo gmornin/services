@@ -29,21 +29,19 @@ async fn simple_task(
         return Err(V1Error::PermissionDenied.into());
     }
 
-    let res = match (post.from, post.to) {
-        (FromFormat::Markdown, ToFormat::Html) => {
-            jobs.run_with_limit(
-                account.id,
-                SingleTask::Compile {
-                    from: FromFormat::Markdown,
-                    to: ToFormat::Html,
-                    source,
-                    user_path,
-                },
-                *MAX_CONCURRENT.get().unwrap(),
-            )
-            .await?
-        }
-    };
+    let res = jobs
+        .run_with_limit(
+            account.id,
+            SingleTask::Compile {
+                from: post.from,
+                to: post.to,
+                compiler: post.compiler.unwrap_or_default(),
+                source,
+                user_path,
+            },
+            *MAX_CONCURRENT.get().unwrap(),
+        )
+        .await?;
 
     Ok(res)
 }

@@ -1,19 +1,20 @@
-use pulldown_cmark::*;
 use std::{
     collections::HashMap,
     error::Error,
-    ffi::OsStr,
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use goodmorning_bindings::services::v1::*;
 
 use tokio::{
     fs,
-    io::AsyncWriteExt,
     sync::oneshot::{self, Sender},
+    time::timeout,
 };
+
+use super::markdown_to_html;
 
 #[derive(Default)]
 pub struct Jobs(pub Mutex<HashMap<i64, Arc<Mutex<Job>>>>);
@@ -77,7 +78,12 @@ impl Job {
             let arc = arc.clone();
 
             let _handle = tokio::task::spawn(async move {
-                jobwrapper.job.task.run(jobwrapper.tx, job.id).await;
+                timeout(
+                    Duration::from_secs(120),
+                    jobwrapper.job.task.run(jobwrapper.tx, job.id),
+                )
+                .await
+                .unwrap();
                 let mut unlocked = arc.lock().unwrap();
                 unlocked.done(jobwrapper.job.id).unwrap();
                 unlocked.bump(max_concurrent, &arc)
@@ -113,6 +119,7 @@ pub struct SingleJob {
 pub enum SingleTask {
     Compile {
         from: FromFormat,
+        compiler: Compiler,
         to: ToFormat,
         source: PathBuf,
         user_path: PathBuf,
@@ -125,6 +132,7 @@ impl SingleTask {
             Self::Compile {
                 from,
                 to,
+                compiler,
                 source,
                 user_path,
             } => {
@@ -141,10 +149,12 @@ impl SingleTask {
                     tx.send(Err(V1Error::FileNotFound)).unwrap();
                     return;
                 }
-                match (from, to) {
-                    (FromFormat::Markdown, ToFormat::Html) => {
-                        markdown_to_html(source, taskid, user_path).await
-                    }
+                match (from, to, compiler) {
+                    (
+                        FromFormat::Markdown,
+                        ToFormat::Html,
+                        Compiler::Default | Compiler::PulldownCmark,
+                    ) => markdown_to_html(source, taskid, user_path).await,
                 }
             }
         };
@@ -161,38 +171,6 @@ impl SingleTask {
 
         tx.send(res).unwrap();
     }
-}
-
-async fn markdown_to_html(
-    source: &Path,
-    taskid: u64,
-    user_path: &Path,
-) -> Result<V1Response, Box<dyn Error>> {
-    if source.extension() != Some(OsStr::new("md")) {
-        return Err(V1Error::ExtensionMismatch.into());
-    }
-
-    let md = fs::read_to_string(source).await?;
-    let mut buf = String::new();
-    html::push_html(&mut buf, Parser::new_ext(&md, Options::all()));
-
-    let newfile = source.with_extension("html");
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(&newfile)
-        .await?;
-    file.write_all(buf.as_bytes()).await?;
-    Ok(V1Response::Compiled {
-        id: taskid,
-        newpath: user_path
-            .with_extension("html")
-            .to_str()
-            .unwrap()
-            .to_string(),
-        message: String::new(),
-    })
 }
 
 pub enum JobError {}

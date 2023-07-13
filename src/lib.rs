@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 #[allow(private_in_public)]
 pub mod api;
 pub mod functions;

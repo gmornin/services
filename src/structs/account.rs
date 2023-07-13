@@ -156,13 +156,13 @@ impl Account {
 }
 
 impl Account {
-    pub fn storage_limits(&self, limits: &StorageLimits) -> u64 {
-        limits._1
+    pub fn storage_limits(&self, limits: &StorageLimitConfigs) -> u64 {
+        limits.base
     }
 
     pub async fn exceeds_limit(
         &self,
-        limits: &StorageLimits,
+        limits: &StorageLimitConfigs,
         extra: Option<u64>,
         remove: Option<u64>,
     ) -> io::Result<bool> {
@@ -180,7 +180,7 @@ impl Account {
 
 impl Account {
     fn hash_with_id(password: &str, id: &str) -> String {
-        hash(password, vec![id])
+        hash(password, id)
     }
 
     fn hash(&self, password: &str) -> String {
@@ -225,9 +225,4 @@ impl From<V1IdentifierType> for IdentifierType {
             V1IdentifierType::Id => Self::Id,
         }
     }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct StorageLimits {
-    pub _1: u64,
 }

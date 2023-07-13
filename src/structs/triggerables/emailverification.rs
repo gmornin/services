@@ -2,18 +2,18 @@ use crate::{
     functions::get_accounts,
     structs::Trigger,
     traits::{CollectionItem, Triggerable},
+    *,
 };
 use async_trait::async_trait;
 
 use goodmorning_bindings::services::v1::V1Error;
 use lettre::{
     message::{header::ContentType, MessageBuilder},
-    transport::smtp::authentication::Credentials,
     AsyncSmtpTransport, AsyncTransport, Tokio1Executor,
 };
 use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
-use std::{env, error::Error};
+use std::error::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EmailVerification {
@@ -26,13 +26,8 @@ pub struct EmailVerification {
 #[async_trait]
 impl Triggerable for EmailVerification {
     async fn init(&self, _db: &Database, id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
-        let email_username = env::var("SMTP_USERNAME").expect("`SMTP_USERNAME` not found in env");
-        let email_password = env::var("SMTP_PASSWORD").expect("`SMTP_PASSWORD` not found in env");
-        let smtp_relay = env::var("SMTP_RELAY").expect("`SMTP_RELAY` not found in env");
-        let smtp_from = env::var("SMTP_FROM").expect("`SMTP_FROM` not found in env");
-
         let message = MessageBuilder::new()
-            .from(smtp_from.parse()?)
+            .from(SMTP_FROM.get().unwrap().parse()?)
             .to(format!("{}<{}>", self.username, self.email).parse()?)
             .subject("Verify your GoodMorning account")
             .header(ContentType::TEXT_PLAIN)
@@ -44,10 +39,8 @@ impl Triggerable for EmailVerification {
                 Trigger::revoke_url(id)
             ))?;
 
-        let creds = Credentials::new(email_username, email_password);
-
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_relay)?
-            .credentials(creds)
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(SMTP_RELAY.get().unwrap())?
+            .credentials(SMTP_CREDS.get().unwrap().clone())
             .build();
 
         mailer.send(message).await?;

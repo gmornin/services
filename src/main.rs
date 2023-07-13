@@ -3,14 +3,12 @@ use actix_web::{
     web::{self, Data},
     App, HttpServer,
 };
-use dotenv::dotenv;
 use goodmorning_services::{init as valinit, structs::Jobs, *};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use simplelog::*;
 use std::fs::OpenOptions;
 use std::{
-    env,
     fs::{self, File},
     io::BufReader,
 };
@@ -19,7 +17,6 @@ use std::{
 async fn main() {
     sudo::escalate_if_needed().unwrap();
 
-    dotenv().ok();
     valinit().await;
     init();
 
@@ -86,8 +83,8 @@ fn load_rustls_config() -> rustls::ServerConfig {
         .with_no_client_auth();
 
     // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open(env::var("CERT_CHAIN").unwrap()).unwrap());
-    let key_file = &mut BufReader::new(File::open(env::var("CERT_KEY").unwrap()).unwrap());
+    let cert_file = &mut BufReader::new(File::open(CERT_CHAIN.get().unwrap()).unwrap());
+    let key_file = &mut BufReader::new(File::open(CERT_KEY.get().unwrap()).unwrap());
 
     // convert files to key/cert objects
     let cert_chain = certs(cert_file)

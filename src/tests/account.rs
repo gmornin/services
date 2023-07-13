@@ -9,7 +9,6 @@ use dotenv::dotenv;
 
 #[tokio::test]
 async fn account_exists() {
-    dotenv().ok();
     let accounts = f::get_accounts(&f::get_dev_database(&f::get_client().await));
     assert!(
         Account::find_by_username("example username".to_string(), &accounts)
@@ -27,7 +26,6 @@ async fn account_exists() {
 
 #[tokio::test]
 async fn new_account_write() {
-    dotenv().ok();
     let accounts = f::get_accounts(&f::get_dev_database(&f::get_client().await));
 
     let username = String::from("example username");
@@ -48,7 +46,6 @@ async fn new_account_write() {
 
 #[tokio::test]
 async fn account_verification() {
-    dotenv().ok();
     let db = f::get_dev_database(&f::get_client().await);
     let accounts = f::get_accounts(&db);
     let triggers = f::get_triggers(&db);
