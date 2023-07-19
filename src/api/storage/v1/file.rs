@@ -1,5 +1,10 @@
 use actix_files::NamedFile;
-use actix_web::{web::Path, *};
+use actix_web::{
+    http::header::ContentDisposition,
+    web::{Path, Query},
+    *,
+};
+use serde::Deserialize;
 use std::{error::Error, path::PathBuf};
 use tokio::fs::{self, try_exists};
 
@@ -10,9 +15,19 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
+#[derive(Deserialize)]
+struct DisplayType {
+    #[serde(rename = "type")]
+    pub r#type: Option<String>,
+}
+
 #[get("/file/{token}/{path:.*}")]
-pub async fn file(path: Path<(String, String)>, req: HttpRequest) -> HttpResponse {
-    match file_task(path, &req).await {
+pub async fn file(
+    path: Path<(String, String)>,
+    req: HttpRequest,
+    query: Query<DisplayType>,
+) -> HttpResponse {
+    match file_task(path, &req, query).await {
         Ok(ok) => ok,
         Err(e) => HttpResponse::NotFound().json(V1Response::from_res(Err(e))),
     }
@@ -21,6 +36,7 @@ pub async fn file(path: Path<(String, String)>, req: HttpRequest) -> HttpRespons
 async fn file_task(
     path: Path<(String, String)>,
     req: &HttpRequest,
+    query: Query<DisplayType>,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let (token, path) = path.into_inner();
     let account = Account::v1_get_by_token(&token)
@@ -43,5 +59,14 @@ async fn file_task(
         return Err(V1Error::TypeMismatch.into());
     }
 
-    Ok(NamedFile::open_async(path_buf).await?.into_response(req))
+    Ok(match query.r#type.as_deref().unwrap_or_default() {
+        "inline" => NamedFile::open_async(path_buf)
+            .await?
+            .set_content_disposition(ContentDisposition {
+                disposition: http::header::DispositionType::Inline,
+                parameters: Vec::new(),
+            }),
+        _ => NamedFile::open_async(path_buf).await?,
+    }
+    .into_response(req))
 }
