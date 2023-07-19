@@ -2,11 +2,13 @@ use goodmorning_bindings::services::v1::{V1Error, V1IdentifierType};
 use std::error::Error;
 
 use chrono::Utc;
-use mongodb::{bson::doc, Collection, Database};
+use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
 use tokio::io;
 
-use crate::{functions::*, structs::*, traits::*, ACCOUNTS};
+use crate::{
+    functions::*, structs::*, traits::*, ACCOUNTS, DATABASE, EMAIL_VERIFICATION_DURATION, TRIGGERS,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Account {
@@ -18,6 +20,8 @@ pub struct Account {
     pub username: String,
 
     pub email: String,
+    #[serde(default)]
+    pub last_verify: u64,
     pub verified: bool,
 
     #[serde(default)]
@@ -47,6 +51,7 @@ impl Account {
             username,
 
             email: email.to_lowercase(),
+            last_verify: now,
             verified: false,
 
             status: String::new(),
@@ -62,62 +67,75 @@ impl Account {
     }
 
     /// Creates an `EmailVerification` instance
-    pub fn email_verification(&self) -> EmailVerification {
-        EmailVerification {
+    pub async fn email_verification(&self) -> Result<(), Box<dyn Error>> {
+        let trigger_item = EmailVerification {
             username: self.username.clone(),
             email: self.email.clone(),
             id: self.id,
-        }
+        };
+        let trigger = Trigger::new_from_action(
+            Box::new(trigger_item),
+            EMAIL_VERIFICATION_DURATION.get().unwrap(),
+        );
+        trigger.init(DATABASE.get().unwrap()).await?;
+        trigger.save_create(TRIGGERS.get().unwrap()).await?;
+
+        Ok(())
     }
 
     /// regenerates token
     pub fn regeneratetoken(&mut self) {
         self.token = Self::token()
     }
+
+    /// update password from &mut self
+    pub fn change_password(&mut self, new: &str) {
+        self.password_hash = Self::hash_with_id(new, &self.id.to_string());
+    }
 }
 
 impl Account {
-    pub async fn find_by_username(
-        username: String,
-        collection: &Collection<Self>,
-    ) -> Result<Option<Self>, mongodb::error::Error> {
-        collection
+    pub async fn find_by_username(username: String) -> Result<Option<Self>, mongodb::error::Error> {
+        ACCOUNTS
+            .get()
+            .unwrap()
             .find_one(doc! {"username": case_insensitive(username)}, None)
             .await
     }
 
-    pub async fn find_by_email(
-        email: &str,
-        collection: &Collection<Self>,
-    ) -> Result<Option<Self>, mongodb::error::Error> {
-        collection
+    pub async fn find_by_email(email: &str) -> Result<Option<Self>, mongodb::error::Error> {
+        ACCOUNTS
+            .get()
+            .unwrap()
             .find_one(doc! {"email": email.to_lowercase()}, None)
             .await
     }
 
-    pub async fn find_by_token(
-        token: &str,
-        collection: &Collection<Self>,
-    ) -> Result<Option<Self>, mongodb::error::Error> {
-        collection.find_one(doc! {"token": token}, None).await
+    pub async fn find_by_token(token: &str) -> Result<Option<Self>, mongodb::error::Error> {
+        ACCOUNTS
+            .get()
+            .unwrap()
+            .find_one(doc! {"token": token}, None)
+            .await
     }
 
     pub async fn find_by_idenifier(
         identifier_type: &IdentifierType,
         identifier: String,
-        collection: &Collection<Self>,
     ) -> Result<Option<Self>, Box<dyn Error>> {
         Ok(match identifier_type {
-            IdentifierType::Id => Account::find_by_id(identifier.parse()?, collection).await?,
-            IdentifierType::Email => Account::find_by_email(&identifier, collection).await?,
-            IdentifierType::Username => Account::find_by_username(identifier, collection).await?,
+            IdentifierType::Id => {
+                Account::find_by_id(identifier.parse()?, ACCOUNTS.get().unwrap()).await?
+            }
+            IdentifierType::Email => Account::find_by_email(&identifier).await?,
+            IdentifierType::Username => Account::find_by_username(identifier).await?,
         })
     }
 }
 
 impl Account {
     pub async fn v1_get_by_token(token: &str) -> Result<Self, Box<dyn Error>> {
-        match Account::find_by_token(token, ACCOUNTS.get().unwrap()).await? {
+        match Account::find_by_token(token).await? {
             Some(acc) => Ok(acc),
             None => Err(V1Error::InvalidToken.into()),
         }

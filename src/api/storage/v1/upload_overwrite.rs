@@ -1,6 +1,6 @@
 use actix_multipart::Multipart;
 use actix_web::{web::Path, *};
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 use tokio::{
     fs::{self, OpenOptions},
     io::AsyncWriteExt,
@@ -29,11 +29,13 @@ async fn upload_overwrite_task(
         .await?
         .v1_restrict_verified()?;
 
-    let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
+    let user_path = PathBuf::from(path.trim_start_matches('/'));
 
-    if !editable(&path_buf) || has_dotdot(&path_buf) {
+    if !editable(&user_path) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
+
+    let path_buf = get_user_dir(account.id, None).join(user_path);
 
     if account
         .exceeds_limit(

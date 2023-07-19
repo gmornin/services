@@ -11,14 +11,13 @@ async fn delete(post: Json<V1TokenOnly>) -> HttpResponse {
 
 async fn delete_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
-    let accounts = ACCOUNTS.get().unwrap();
 
-    let account = match Account::find_by_token(&post.token, accounts).await? {
+    let account = match Account::find_by_token(&post.token).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };
 
-    account.delete(accounts).await?;
+    account.delete(ACCOUNTS.get().unwrap()).await?;
 
     Ok(V1Response::Deleted)
 }

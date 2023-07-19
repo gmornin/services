@@ -8,7 +8,6 @@ mod file;
 mod mkdir;
 mod r#move;
 mod move_overwrite;
-mod read;
 mod remove_visibility;
 mod set_visibility;
 mod touch;

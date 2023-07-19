@@ -6,6 +6,8 @@ use crate::traits::ConfigTrait;
 pub struct LimitsConfig {
     #[serde(default = "verification_timeframe_default")]
     pub verification_timeframe: u64,
+    #[serde(default = "verification_timeframe_default")]
+    pub verification_cooldown: u64,
     #[serde(default)]
     pub storage_limits: StorageLimitConfigs,
     #[serde(default = "pfp_limit_default")]
@@ -18,6 +20,7 @@ impl Default for LimitsConfig {
     fn default() -> Self {
         Self {
             verification_timeframe: verification_timeframe_default(),
+            verification_cooldown: verification_cooldown_default(),
             storage_limits: StorageLimitConfigs::default(),
             pfp_limit: pfp_limit_default(),
             jobs: QueueConfigs::default(),
@@ -78,4 +81,8 @@ const fn max_concurrent_default() -> usize {
 
 const fn queue_limit_default() -> usize {
     9999
+}
+
+const fn verification_cooldown_default() -> u64 {
+    300
 }

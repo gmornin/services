@@ -1,4 +1,5 @@
 mod jobs;
+mod latex;
 mod markdown;
 
 use markdown::*;

@@ -14,7 +14,7 @@ use tokio::{
     time::timeout,
 };
 
-use super::markdown_to_html;
+use super::{latex::pdflatex_latex2pdf, *};
 
 #[derive(Default)]
 pub struct Jobs(pub Mutex<HashMap<i64, Arc<Mutex<Job>>>>);
@@ -123,6 +123,7 @@ pub enum SingleTask {
         to: ToFormat,
         source: PathBuf,
         user_path: PathBuf,
+        restrict_path: PathBuf,
     },
 }
 
@@ -135,6 +136,7 @@ impl SingleTask {
                 compiler,
                 source,
                 user_path,
+                restrict_path,
             } => {
                 if !match fs::try_exists(&source).await {
                     Ok(b) => b,
@@ -154,7 +156,14 @@ impl SingleTask {
                         FromFormat::Markdown,
                         ToFormat::Html,
                         Compiler::Default | Compiler::PulldownCmark,
-                    ) => markdown_to_html(source, taskid, user_path).await,
+                    ) => pulldown_cmark_md2html(source, taskid, user_path).await,
+                    (FromFormat::Latex, ToFormat::Pdf, Compiler::Default | Compiler::Pdflatex) => {
+                        pdflatex_latex2pdf(source, taskid, user_path, restrict_path).await
+                    }
+                    _ => {
+                        tx.send(Err(V1Error::InvalidCompileRequest)).unwrap();
+                        return;
+                    }
                 }
             }
         };

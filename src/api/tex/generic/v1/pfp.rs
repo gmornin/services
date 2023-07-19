@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{functions::*, structs::Account, ACCOUNTS, PFP_DEFAULT};
+use crate::{functions::*, structs::Account, PFP_DEFAULT};
 use actix_files::NamedFile;
 use actix_web::{get, web, HttpRequest, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
@@ -42,8 +42,7 @@ async fn pfp_name_task(
     name: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Box<dyn Error>> {
-    let account = match Account::find_by_username(name.to_string(), ACCOUNTS.get().unwrap()).await?
-    {
+    let account = match Account::find_by_username(name.to_string()).await? {
         Some(account) => account,
         None => return Err(V1Error::NoSuchUser.into()),
     };

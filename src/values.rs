@@ -24,6 +24,7 @@ pub static QUEUE_LIMIT: OnceCell<usize> = OnceCell::new();
 pub static MAX_CONCURRENT: OnceCell<usize> = OnceCell::new();
 pub static STORAGE_LIMITS: OnceCell<StorageLimitConfigs> = OnceCell::new();
 pub static EMAIL_VERIFICATION_DURATION: OnceCell<Duration> = OnceCell::new();
+pub static EMAIL_VERIFICATION_COOLDOWN: OnceCell<u64> = OnceCell::new();
 
 pub static HASH_SALT: OnceCell<String> = OnceCell::new();
 pub static SMTP_USERNAME: OnceCell<String> = OnceCell::new();
@@ -64,6 +65,9 @@ pub async fn init() {
     STORAGE_LIMITS.set(limit_configs.storage_limits).unwrap();
     EMAIL_VERIFICATION_DURATION
         .set(Duration::from_secs(limit_configs.verification_timeframe))
+        .unwrap();
+    EMAIL_VERIFICATION_COOLDOWN
+        .set(limit_configs.verification_cooldown)
         .unwrap();
 
     let cert_config = *CredentialsConfig::load().unwrap();

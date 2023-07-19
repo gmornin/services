@@ -15,9 +15,7 @@ async fn regenerate_token_task(post: Json<V1PasswordId>) -> Result<V1Response, B
     let accounts = ACCOUNTS.get().unwrap();
 
     let mut account =
-        match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier, accounts)
-            .await?
-        {
+        match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier).await? {
             Some(account) => account,
             None => return Err(V1Error::NoSuchUser.into()),
         };

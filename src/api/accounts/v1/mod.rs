@@ -1,11 +1,13 @@
 use actix_web::Scope;
 
+mod change_email;
 mod change_password;
 mod create;
 mod delete;
 mod login;
 mod regeneratetoken;
 mod rename;
+mod resend_verify;
 mod set_status;
 
 pub fn scope() -> Scope {
@@ -16,4 +18,6 @@ pub fn scope() -> Scope {
         .service(regeneratetoken::regenerate_token)
         .service(rename::rename)
         .service(set_status::set_status)
+        .service(change_password::changepw)
+        .service(change_email::change_email)
 }

@@ -4,10 +4,8 @@ pub fn editable(path: &Path) -> bool {
     if is_bson(path) {
         return false;
     }
-
     let path_slice = path
         .iter()
-        .skip(5)
         .map(|section| section.to_str().unwrap())
         .collect::<Vec<_>>();
     !(path_slice.len() < 2 || path_slice[1] == ".system")

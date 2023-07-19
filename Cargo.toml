@@ -28,8 +28,8 @@ async-recursion = "1.0"
 actix-files = "0.6"
 actix-extensible-rate-limit = "0.2"
 sudo = "0.6"
-goodmorning-bindings = {path = "../rust-bindings", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
-# goodmorning-bindings = {git = "https://github.com/goodmorning-network/rust-bindings", rev = "5a1eb0c", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
+# goodmorning-bindings = {path = "../rust-bindings", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
+goodmorning-bindings = {git = "https://github.com/goodmorning-network/rust-bindings", rev = "ac6aa0d", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
 once_cell = "1.18"
 regex = "1.8"
 xdg-mime = "0.3"

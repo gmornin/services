@@ -3,7 +3,6 @@ use std::error::Error;
 use crate::{
     functions::*,
     structs::{Account, GMServices},
-    ACCOUNTS,
 };
 use actix_web::{get, web, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
@@ -31,8 +30,7 @@ async fn profile_by_name(name: web::Path<String>) -> HttpResponse {
 }
 
 async fn profile_by_name_task(name: web::Path<String>) -> Result<V1Response, Box<dyn Error>> {
-    let account = match Account::find_by_username(name.to_string(), ACCOUNTS.get().unwrap()).await?
-    {
+    let account = match Account::find_by_username(name.to_string()).await? {
         Some(account) => account,
         None => return Err(V1Error::NoSuchUser.into()),
     };

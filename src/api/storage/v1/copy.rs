@@ -1,6 +1,9 @@
 use actix_web::{web::Json, *};
 use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
-use std::error::Error;
+use std::{
+    error::Error,
+    path::{PathBuf},
+};
 use tokio::fs;
 
 use crate::{functions::*, structs::*, *};
@@ -15,12 +18,19 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         .await?
         .v1_restrict_verified()?;
 
-    let to_buf = get_user_dir(account.id, None).join(post.to.trim_start_matches('/'));
-    let from_buf = get_user_dir(account.id, None).join(post.from.trim_start_matches('/'));
+    let user_tobuf = PathBuf::from(post.to.trim_start_matches('/'));
+    let user_frombuf = PathBuf::from(post.from.trim_start_matches('/'));
 
-    if !editable(&to_buf) || is_bson(&from_buf) || has_dotdot(&to_buf) || has_dotdot(&from_buf) {
+    if !editable(&user_tobuf)
+        || is_bson(&user_frombuf)
+        || has_dotdot(&user_tobuf)
+        || has_dotdot(&user_frombuf)
+    {
         return Err(V1Error::PermissionDenied.into());
     }
+
+    let to_buf = get_user_dir(account.id, None).join(user_tobuf);
+    let from_buf = get_user_dir(account.id, None).join(user_frombuf);
 
     if fs::try_exists(&to_buf).await? {
         return Err(V1Error::PathOccupied.into());

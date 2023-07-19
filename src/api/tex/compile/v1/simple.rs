@@ -22,10 +22,11 @@ async fn simple_task(
         .v1_restrict_verified()?
         .v1_contains(&GMServices::Tex)?;
 
+    let restrict_path = get_user_dir(account.id, Some(GMServices::Tex));
     let user_path = PathBuf::from(post.path.trim_start_matches('/'));
-    let source = get_user_dir(account.id, Some(GMServices::Tex)).join(&user_path);
+    let source = restrict_path.join(&user_path);
 
-    if has_dotdot(&source) && !editable(&source) {
+    if has_dotdot(&user_path) && !is_bson(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
 
@@ -38,6 +39,7 @@ async fn simple_task(
                 compiler: post.compiler.unwrap_or_default(),
                 source,
                 user_path,
+                restrict_path,
             },
             *MAX_CONCURRENT.get().unwrap(),
         )

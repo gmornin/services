@@ -11,9 +11,8 @@ async fn set_status(post: Json<V1SetStatus>) -> HttpResponse {
 
 async fn set_status_task(post: Json<V1SetStatus>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
-    let accounts = ACCOUNTS.get().unwrap();
 
-    let mut account = match Account::find_by_token(&post.token, accounts).await? {
+    let mut account = match Account::find_by_token(&post.token).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
     };
@@ -23,7 +22,7 @@ async fn set_status_task(post: Json<V1SetStatus>) -> Result<V1Response, Box<dyn 
     }
 
     account.status = post.new;
-    account.save_replace(accounts).await?;
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     Ok(V1Response::ProfileUpdated)
 }

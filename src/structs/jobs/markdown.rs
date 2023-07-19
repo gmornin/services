@@ -5,7 +5,7 @@ use std::{ffi::OsStr, path::Path};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
-pub async fn markdown_to_html(
+pub async fn pulldown_cmark_md2html(
     source: &Path,
     taskid: u64,
     user_path: &Path,
@@ -33,6 +33,5 @@ pub async fn markdown_to_html(
             .to_str()
             .unwrap()
             .to_string(),
-        message: String::new(),
     })
 }

@@ -6,7 +6,7 @@ use goodmorning_bindings::{
     traits::ResTrait,
 };
 
-use crate::{structs::*, *};
+use crate::structs::*;
 
 #[post("/login")]
 async fn login(post: Json<V1PasswordId>) -> HttpResponse {
@@ -16,12 +16,9 @@ async fn login(post: Json<V1PasswordId>) -> HttpResponse {
 
 async fn login_task(post: Json<V1PasswordId>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
-    let accounts = ACCOUNTS.get().unwrap();
 
     let account =
-        match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier, accounts)
-            .await?
-        {
+        match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier).await? {
             Some(account) => account,
             None => return Err(V1Error::NoSuchUser.into()),
         };

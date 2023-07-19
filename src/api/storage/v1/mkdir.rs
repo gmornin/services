@@ -1,5 +1,5 @@
 use actix_web::{web::Json, *};
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use goodmorning_bindings::{
@@ -21,11 +21,13 @@ async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error
         .await?
         .v1_restrict_verified()?;
 
-    let path_buf = get_user_dir(account.id, None).join(path.trim_start_matches('/'));
+    let user_path = PathBuf::from(path.trim_start_matches('/'));
 
-    if !editable(&path_buf) || has_dotdot(&path_buf) {
+    if !editable(&user_path) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
+
+    let path_buf = get_user_dir(account.id, None).join(user_path);
 
     if fs::try_exists(&path_buf).await? {
         return Err(V1Error::PathOccupied.into());
