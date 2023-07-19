@@ -13,7 +13,8 @@ Compiles a source file to a web friendly format. Server will returns result when
   "token": String,
   "path": String, (omit the beginning `/tex` as it can only be used in the `/tex` directory)
   "from": FromFormat,
-  "to": ToFormat
+  "to": ToFormat,
+  "compiler": Compiler // leave blank for default
 }
 ```
 
@@ -27,8 +28,7 @@ Status code: `201`
 {
   "type": "compiled",
   "id": u64, // job id
-  "newpath": String,
-  "message": String
+  "newpath": String
 }
 ```
 

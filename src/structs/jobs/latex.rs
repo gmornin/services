@@ -41,7 +41,17 @@ pub async fn pdflatex_latex2pdf(
         .await?;
 
     if output.status.code() != Some(0) {
-        return Err(V1Error::CompileError { content: String::from_utf8(output.stdout)?.lines().rev().skip(2).step_by(2).take(2).collect::<Vec<_>>().join("\n") }.into());
+        return Err(V1Error::CompileError {
+            content: String::from_utf8(output.stdout)?
+                .lines()
+                .rev()
+                .skip(2)
+                .step_by(2)
+                .take(2)
+                .collect::<Vec<_>>()
+                .join("\n"),
+        }
+        .into());
     }
 
     Ok(V1Response::Compiled {

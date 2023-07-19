@@ -8,6 +8,9 @@ Compile related actions - compile files from a source format (such as latex/md) 
 
 Valid compilations:
 
-|From|To|
-|---|---|
-|`markdown`|`html`|
+|From|To|Compilers|
+|---|---|---|
+|`markdown`|`html`|`pulldown-cmark`|
+|`latex`|`pdf`|`pdflatex`|
+
+Leave the `compiler` field blank or set it as `default` to use the default compiler of the format.

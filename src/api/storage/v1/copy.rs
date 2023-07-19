@@ -1,9 +1,6 @@
 use actix_web::{web::Json, *};
 use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
-use std::{
-    error::Error,
-    path::{PathBuf},
-};
+use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
 use crate::{functions::*, structs::*, *};
