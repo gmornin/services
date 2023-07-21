@@ -58,17 +58,18 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         }
         fs::copy(&from_buf, &to_buf).await?;
     } else {
-        if account
-            .exceeds_limit(
-                STORAGE_LIMITS.get().unwrap(),
-                Some(dir_size(&from_buf).await?),
-                None,
-            )
-            .await?
-        {
-            return Err(V1Error::FileTooLarge.into());
-        }
-        copy_folder(&from_buf, &to_buf).await?;
+        return Err(V1Error::PermissionDenied.into());
+        // if account
+        //     .exceeds_limit(
+        //         STORAGE_LIMITS.get().unwrap(),
+        //         Some(dir_size(&from_buf).await?),
+        //         None,
+        //     )
+        //     .await?
+        // {
+        //     return Err(V1Error::FileTooLarge.into());
+        // }
+        // copy_folder(&from_buf, &to_buf).await?;
     }
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;

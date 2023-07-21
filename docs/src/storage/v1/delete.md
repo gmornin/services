@@ -19,7 +19,7 @@ Status code: `200`
 
 ```json
 {
-  "type": "copied"
+  "type": "deleted"
 }
 ```
 
