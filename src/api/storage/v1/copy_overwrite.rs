@@ -31,16 +31,19 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     }
 
     let to_buf = get_user_dir(account.id, None).join(user_tobuf);
-    let from_buf = get_user_dir(account.id, None).join(user_frombuf);
+    let from_buf = get_user_dir(post.from_userid, None).join(user_frombuf);
+
+    let mut vis = None;
 
     if post.from_userid == account.id {
         if !fs::try_exists(&from_buf).await? {
             return Err(V1Error::FileNotFound.into());
         }
-    } else if !fs::try_exists(&from_buf).await?
-        || Visibilities::visibility(&from_buf).await?.visibility == ItemVisibility::Private
-    {
-        return Err(V1Error::FileNotFound.into());
+    } else {
+        vis = Some(Visibilities::visibility(&from_buf).await?.visibility);
+        if !fs::try_exists(&from_buf).await? || vis == Some(ItemVisibility::Private) {
+            return Err(V1Error::FileNotFound.into());
+        }
     }
 
     if from_buf.extension() != to_buf.extension() {
@@ -61,20 +64,32 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         }
         remove(&to_buf).await?;
         fs::copy(&from_buf, &to_buf).await?;
+    } else if account.id == post.from_userid {
+        if account
+            .exceeds_limit(
+                STORAGE_LIMITS.get().unwrap(),
+                Some(dir_size(&from_buf).await?),
+                None,
+            )
+            .await?
+        {
+            return Err(V1Error::FileTooLarge.into());
+        }
+        fs::remove_dir(&to_buf).await?;
+        copy_folder_owned(&from_buf, &to_buf).await?;
     } else {
-        return Err(V1Error::PermissionDenied.into());
-        // if account
-        //     .exceeds_limit(
-        //         STORAGE_LIMITS.get().unwrap(),
-        //         Some(dir_size(&from_buf).await?),
-        //         None,
-        //     )
-        //     .await?
-        // {
-        //     return Err(V1Error::FileTooLarge.into());
-        // }
-        // remove(&to_buf).await?;
-        // copy_folder(&from_buf, &to_buf).await?;
+        if account
+            .exceeds_limit(
+                STORAGE_LIMITS.get().unwrap(),
+                Some(dir_size_unowned(&from_buf, vis.unwrap()).await?),
+                None,
+            )
+            .await?
+        {
+            return Err(V1Error::FileTooLarge.into());
+        }
+        fs::remove_dir(&to_buf).await?;
+        copy_folder_owned(&from_buf, &to_buf).await?;
     }
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;

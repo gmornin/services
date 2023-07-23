@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, path::Path};
 use tokio::{fs, io::AsyncWriteExt};
 
+use crate::VIS_DEFAULT;
+
 pub const VISIBILITIES_BSON: &str = "visibility.bson";
 
 #[derive(Default, Serialize, Deserialize)]
@@ -118,12 +120,12 @@ impl Default for Visibility {
     fn default() -> Self {
         Self {
             inherited: true,
-            visibility: ItemVisibility::Private,
+            visibility: ItemVisibility::default(),
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ItemVisibility {
     #[serde(rename = "hidden")]
     Hidden,
@@ -155,6 +157,6 @@ impl From<ItemVisibility> for V1ItemVisibility {
 
 impl Default for ItemVisibility {
     fn default() -> Self {
-        Self::Private
+        *VIS_DEFAULT.get().unwrap()
     }
 }

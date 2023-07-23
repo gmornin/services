@@ -10,10 +10,10 @@ pub struct StorageConfig {
     pub mongo_host: String,
     #[serde(default = "db_name_default")]
     pub db_name: String,
-    #[serde(default = "storage_path_default")]
-    pub storage_path: String,
     #[serde(default = "usercontent_path_default")]
     pub usercontent_path: String,
+    #[serde(default = "logs_path_default")]
+    pub logs_path: String,
 }
 
 impl Default for StorageConfig {
@@ -22,8 +22,8 @@ impl Default for StorageConfig {
             self_addr: self_addr_default(),
             mongo_host: mongodb_host_default(),
             db_name: db_name_default(),
-            storage_path: storage_path_default(),
             usercontent_path: usercontent_path_default(),
+            logs_path: logs_path_default(),
         }
     }
 }
@@ -44,10 +44,10 @@ fn db_name_default() -> String {
     "goodmorning-prod".to_string()
 }
 
-fn storage_path_default() -> String {
-    "~/.local/share/gm".to_string()
-}
-
 fn usercontent_path_default() -> String {
     "~/.local/share/gm/usercontent".to_string()
+}
+
+fn logs_path_default() -> String {
+    "~/.local/share/gm/logs".to_string()
 }

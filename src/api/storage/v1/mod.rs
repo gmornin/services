@@ -11,6 +11,7 @@ mod move_overwrite;
 mod remove_visibility;
 mod set_visibility;
 mod touch;
+mod tree;
 mod upload;
 mod upload_overwrite;
 
@@ -18,7 +19,6 @@ pub fn scope() -> Scope {
     Scope::new("/v1")
         .service(upload_overwrite::upload_overwrite)
         .service(upload::upload)
-        // .service(read::read)
         .service(mkdir::mkdir)
         .service(set_visibility::set_visibility)
         .service(remove_visibility::remove_visibility)
@@ -28,4 +28,5 @@ pub fn scope() -> Scope {
         .service(r#move::r#move)
         .service(file::file)
         .service(diritems::diritems)
+        .service(tree::tree)
 }
