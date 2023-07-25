@@ -22,7 +22,7 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     let user_tobuf = PathBuf::from(post.to.trim_start_matches('/'));
     let user_frombuf = PathBuf::from(post.from.trim_start_matches('/'));
 
-    if !editable(&user_tobuf)
+    if !editable(&user_tobuf, &account.services)
         || is_bson(&user_frombuf)
         || has_dotdot(&user_tobuf)
         || has_dotdot(&user_frombuf)

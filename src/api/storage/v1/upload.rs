@@ -31,8 +31,7 @@ async fn upload_task(
 
     let user_path = PathBuf::from(path.trim_start_matches('/'));
 
-    if !editable(&user_path) || has_dotdot(&user_path) {
-        println!("{user_path:?} {}", editable(&user_path));
+    if !editable(&user_path, &account.services) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
 

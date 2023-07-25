@@ -4,6 +4,7 @@ mod copy;
 mod copy_overwrite;
 mod delete;
 mod diritems;
+mod exists;
 mod file;
 mod mkdir;
 mod r#move;
@@ -13,12 +14,15 @@ mod set_visibility;
 mod touch;
 mod tree;
 mod upload;
+mod upload_createdirs;
 mod upload_overwrite;
 
 pub fn scope() -> Scope {
     Scope::new("/v1")
         .service(upload_overwrite::upload_overwrite)
         .service(upload::upload)
+        .service(upload_createdirs::upload_createdirs)
+        .service(upload_createdirs::upload_createdirs_overwrite)
         .service(mkdir::mkdir)
         .service(set_visibility::set_visibility)
         .service(remove_visibility::remove_visibility)
@@ -29,4 +33,5 @@ pub fn scope() -> Scope {
         .service(file::file)
         .service(diritems::diritems)
         .service(tree::tree)
+        .service(exists::exists)
 }

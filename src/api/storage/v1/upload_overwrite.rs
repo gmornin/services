@@ -31,7 +31,7 @@ async fn upload_overwrite_task(
 
     let user_path = PathBuf::from(path.trim_start_matches('/'));
 
-    if !editable(&user_path) || has_dotdot(&user_path) {
+    if !editable(&user_path, &account.services) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
 
@@ -84,6 +84,10 @@ async fn upload_overwrite_task(
             }
             _ => {}
         }
+    }
+
+    if fs::try_exists(&path_buf).await? && fs::metadata(&path_buf).await?.is_dir() {
+        fs::remove_dir(&path_buf).await?;
     }
 
     let mut file = OpenOptions::new()

@@ -1,6 +1,8 @@
 use std::{ffi::OsStr, path::Path};
 
-pub fn editable(path: &Path) -> bool {
+use crate::structs::GMServices;
+
+pub fn editable(path: &Path, services: &[GMServices]) -> bool {
     if is_bson(path) {
         return false;
     }
@@ -8,7 +10,12 @@ pub fn editable(path: &Path) -> bool {
         .iter()
         .map(|section| section.to_str().unwrap())
         .collect::<Vec<_>>();
-    !(path_slice.len() < 2 || path_slice[1] == ".system")
+    path_slice.len() >= 2
+        && path_slice[1] != ".system"
+        && match GMServices::from_str(path_slice[0]) {
+            Some(service) => services.contains(&service),
+            None => false,
+        }
 }
 
 pub fn is_bson(path: &Path) -> bool {

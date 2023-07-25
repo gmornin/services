@@ -17,7 +17,7 @@ async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error
         .v1_restrict_verified()?;
 
     let user_path = PathBuf::from(post.path.trim_start_matches('/'));
-    if !editable(&user_path) || has_dotdot(&user_path) {
+    if !editable(&user_path, &account.services) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
     let path_buf = get_user_dir(account.id, None).join(user_path);

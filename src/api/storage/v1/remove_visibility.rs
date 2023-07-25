@@ -18,7 +18,7 @@ async fn remove_visibility_task(post: Json<V1PathOnly>) -> Result<V1Response, Bo
 
     let user_path = PathBuf::from(post.path.trim_start_matches('/'));
 
-    if !editable(&user_path) || has_dotdot(&user_path) {
+    if !editable(&user_path, &account.services) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
     }
 

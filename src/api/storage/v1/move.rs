@@ -19,8 +19,8 @@ async fn move_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error
     let user_frombuf = PathBuf::from(post.from.trim_start_matches('/'));
     let user_tobuf = PathBuf::from(post.to.trim_start_matches('/'));
 
-    if !editable(&user_tobuf)
-        || !editable(&user_frombuf)
+    if !editable(&user_tobuf, &account.services)
+        || !editable(&user_frombuf, &account.services)
         || has_dotdot(&user_tobuf)
         || has_dotdot(&user_frombuf)
     {
