@@ -83,7 +83,7 @@ pub async fn dir_items(
                 .overwrite_if_inherited(dir_visibilily)
                 .into();
 
-            if matches!(visibility.visibility, ItemVisibility::Private) {
+            if !matches!(visibility.visibility, ItemVisibility::Public) {
                 continue;
             }
 

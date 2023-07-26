@@ -92,7 +92,7 @@ impl Visibilities {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub struct Visibility {
     pub inherited: bool,
     pub visibility: ItemVisibility,
@@ -158,5 +158,14 @@ impl From<ItemVisibility> for V1ItemVisibility {
 impl Default for ItemVisibility {
     fn default() -> Self {
         *VIS_DEFAULT.get().unwrap()
+    }
+}
+
+impl From<V1Visibility> for Visibility {
+    fn from(value: V1Visibility) -> Self {
+        Self {
+            inherited: value.inherited,
+            visibility: value.visibility.into(),
+        }
     }
 }
