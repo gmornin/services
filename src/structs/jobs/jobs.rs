@@ -26,19 +26,22 @@ pub struct Job {
 }
 
 impl Jobs {
+    pub fn get(&self, id: i64) -> Arc<Mutex<Job>> {
+        self.0
+            .lock()
+            .unwrap()
+            .entry(id)
+            .or_insert(Arc::default())
+            .clone()
+    }
+
     pub async fn run_with_limit(
         &self,
         id: i64,
         task: SingleTask,
         max_concurrent: usize,
     ) -> Result<V1Response, Box<dyn Error>> {
-        let arc = self
-            .0
-            .lock()
-            .unwrap()
-            .entry(id)
-            .or_insert(Arc::default())
-            .clone();
+        let arc = self.get(id);
 
         Job::run_with_limit(
             arc,
@@ -50,9 +53,29 @@ impl Jobs {
         )
         .await
     }
+
+    pub fn unqueue(&self, id: i64, jobid: u64) -> Result<(), V1Error> {
+        self.0
+            .lock()
+            .unwrap()
+            .entry(id)
+            .or_insert(Arc::default())
+            .lock()
+            .unwrap()
+            .unqueue(jobid)
+    }
 }
 
 impl Job {
+    pub fn unqueue(&mut self, jobid: u64) -> Result<(), V1Error> {
+        match self.queue.iter().position(|job| job.job.id == jobid) {
+            Some(i) => self.queue.remove(i),
+            None => return Err(V1Error::JobNotFound),
+        };
+
+        Ok(())
+    }
+
     async fn run_with_limit(
         arc: Arc<Mutex<Self>>,
         max_concurrent: usize,
@@ -127,7 +150,33 @@ pub enum SingleTask {
     },
 }
 
+impl SingleJob {
+    pub fn to_v1(&self) -> V1Job {
+        V1Job {
+            id: self.id,
+            task: self.task.to_v1(),
+        }
+    }
+}
+
 impl SingleTask {
+    pub fn to_v1(&self) -> V1Task {
+        match self {
+            Self::Compile {
+                from,
+                compiler,
+                to,
+                user_path,
+                ..
+            } => V1Task::Compile {
+                from: *from,
+                to: *to,
+                compiler: *compiler,
+                path: user_path.to_str().unwrap().to_string(),
+            },
+        }
+    }
+
     async fn run(&self, tx: Sender<Result<V1Response, V1Error>>, taskid: u64) {
         let res = match self {
             Self::Compile {
@@ -181,5 +230,3 @@ impl SingleTask {
         tx.send(res).unwrap();
     }
 }
-
-pub enum JobError {}

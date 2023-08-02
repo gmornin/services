@@ -20,6 +20,33 @@ pub async fn pdflatex_latex2pdf(
         return Err(V1Error::FileNotFound.into());
     }
 
+    // dbg!(Command::new("firejail")
+    //     .arg(format!("--private={}", restrict_path.to_str().unwrap()))
+    //     .arg("--noprofile")
+    //     .arg("pdflatex")
+    //     .arg("-interaction")
+    //     .arg("nonstopmode")
+    //     .arg("-halt-on-error")
+    //     .arg("-file-line-error")
+    //     .arg(format!(
+    //         "-output-directory={}",
+    //         source
+    //             .parent()
+    //             .unwrap_or(Path::new(""))
+    //             .to_str()
+    //             .unwrap()
+    //     ))
+    //     .arg(source.to_str().unwrap()));
+    //
+
+    dbg!(format!(
+        "-output-directory=.{}",
+        user_path
+            .parent()
+            .unwrap_or(Path::new(""))
+            .to_str()
+            .unwrap()
+    ));
     let output = Command::new("firejail")
         .arg(format!("--private={}", restrict_path.to_str().unwrap()))
         .arg("--noprofile")
@@ -29,16 +56,19 @@ pub async fn pdflatex_latex2pdf(
         .arg("-halt-on-error")
         .arg("-file-line-error")
         .arg(format!(
-            "-output-directory={}",
+            "-output-directory=./{}",
             user_path
                 .parent()
                 .unwrap_or(Path::new(""))
                 .to_str()
                 .unwrap()
+                .trim_start_matches('/')
         ))
         .arg(user_path.to_str().unwrap())
         .output()
         .await?;
+
+    println!("{}", String::from_utf8(output.stdout.clone()).unwrap());
 
     if output.status.code() != Some(0) {
         return Err(V1Error::CompileError {

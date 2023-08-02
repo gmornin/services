@@ -46,3 +46,7 @@
             - [reset-profile](./tex/generic/v1/reset-profile.md)
             - [set-pfp](./tex/generic/v1/set-pfp.md)
             - [set-profile](./tex/generic/v1/set-profile.md)
+- [Jobs](./jobs/index.md)
+    - [v1](./jobs/v1/index.md)
+        - [jobs](./jobs/v1/jobs.md)
+        - [unqueue](./jobs/v1/unqueue.md)

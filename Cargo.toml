@@ -29,7 +29,7 @@ actix-files = "0.6"
 actix-extensible-rate-limit = "0.2"
 sudo = "0.6"
 # goodmorning-bindings = {path = "../rust-bindings", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
-goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev = "dddd894", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
+goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev = "f7fb9c3", features = ["services-v1", "res-serde", "req-serde", "restrait"], version = "*"}
 once_cell = "1.18"
 regex = "1.8"
 xdg-mime = "0.3"
