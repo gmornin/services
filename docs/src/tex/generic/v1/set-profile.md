@@ -6,8 +6,6 @@ POST `/api/tex/generic/v1/set-profile`
 
 Set GoodMorningTex only profile.
 
-> Note: this does not set account wide status, for that you will need to use `/api/accounts/v1/set-status` to a blank string as well.
-
 ## Request
 
 ```json
@@ -15,7 +13,7 @@ Set GoodMorningTex only profile.
   "token":  String
   "profile": {
     "description": String,
-    "detail": [
+    "details": [
       {
         "type": "cake day",
         "value": {

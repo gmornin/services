@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, path::Path};
 use tokio::{fs, io::AsyncWriteExt};
 
-use crate::VIS_DEFAULT;
+use crate::{
+    functions::{bson_read, bson_write},
+    VIS_DEFAULT,
+};
 
 pub const VISIBILITIES_BSON: &str = "visibility.bson";
 
@@ -35,16 +38,7 @@ impl Visibilities {
     }
 
     pub async fn read_dir(path: &Path) -> Result<Visibilities, Box<dyn Error>> {
-        let path = path.join(VISIBILITIES_BSON);
-        if !fs::try_exists(&path).await? {
-            return Ok(Visibilities::default());
-        }
-
-        let bytes = fs::read(path).await?;
-        let bson = bson::from_slice(&bytes)?;
-        let visibilities: Visibilities = bson::from_bson(bson)?;
-
-        Ok(visibilities)
+        bson_read(&path.join(VISIBILITIES_BSON)).await
     }
 
     pub async fn visibility(path: &Path) -> Result<Visibility, Box<dyn Error>> {
@@ -76,19 +70,7 @@ impl Visibilities {
     }
 
     pub async fn save(&self, path: &Path) -> Result<(), Box<dyn Error>> {
-        let path = path.join(VISIBILITIES_BSON);
-        let doc = bson::to_document(&self)?;
-        let mut bytes = Vec::new();
-        doc.to_writer(&mut bytes)?;
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(path)
-            .await?;
-        file.write_all(&bytes).await?;
-
-        Ok(())
+        bson_write(&self, &path.join(VISIBILITIES_BSON)).await
     }
 }
 
