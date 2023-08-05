@@ -8,6 +8,10 @@ pub struct DefaultsConfig {
     pub pfp_default_path: String,
     #[serde(default = "default_visibility_default")]
     pub default_visibility: ItemVisibility,
+    #[serde(default = "http_port_default")]
+    pub http_port: u16,
+    #[serde(default = "https_port_default")]
+    pub https_port: u16,
 }
 
 impl Default for DefaultsConfig {
@@ -15,6 +19,8 @@ impl Default for DefaultsConfig {
         Self {
             pfp_default_path: pfp_default_path_default(),
             default_visibility: default_visibility_default(),
+            http_port: http_port_default(),
+            https_port: https_port_default(),
         }
     }
 }
@@ -29,4 +35,12 @@ fn pfp_default_path_default() -> String {
 
 fn default_visibility_default() -> ItemVisibility {
     ItemVisibility::Public
+}
+
+fn http_port_default() -> u16 {
+    80
+}
+
+fn https_port_default() -> u16 {
+    443
 }

@@ -1,4 +1,3 @@
-use crate::functions::get_triggers;
 use crate::traits::{CollectionItem, Triggerable};
 use crate::*;
 use chrono::Utc;
@@ -31,30 +30,27 @@ impl Trigger {
         }
     }
 
-    pub async fn init(&self, db: &Database) -> Result<(), Box<dyn Error>> {
-        self.action.init(db, &self.id, self.expiry).await
+    pub async fn init(&self, _db: &Database) -> Result<(), Box<dyn Error>> {
+        self.action.init(&self.id, self.expiry).await
     }
 
-    pub async fn trigger(&self, db: &Database) -> Result<(), Box<dyn Error>> {
-        let triggers = get_triggers(db);
+    pub async fn trigger(&self, _db: &Database) -> Result<(), Box<dyn Error>> {
+        let triggers = TRIGGERS.get().unwrap();
         let trigger = triggers
             .find_one_and_delete(doc! {"_id": &self.id}, None)
             .await?
             .ok_or(V1Error::TriggerNotFound)?;
 
         if trigger.is_invalid() {
-            self.delete(&triggers).await?;
+            self.delete(triggers).await?;
             return Err(V1Error::TriggerNotFound.into());
         }
 
-        trigger
-            .action
-            .trigger(db, &trigger.id, trigger.expiry)
-            .await
+        trigger.action.trigger(&trigger.id, trigger.expiry).await
     }
 
     pub async fn revoke(&self, db: &Database) -> Result<(), Box<dyn Error>> {
-        let triggers = get_triggers(db);
+        let triggers = TRIGGERS.get().unwrap();
         let trigger = triggers
             .find_one_and_delete(doc! {"_id": &self.id}, None)
             .await?

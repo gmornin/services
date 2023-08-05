@@ -63,9 +63,9 @@ async fn main() {
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)
     })
-    .bind(("0.0.0.0", 80))
+    .bind(("0.0.0.0", *HTTP_PORT.get().unwrap()))
     .expect("cannot bind to port")
-    .bind_rustls(("0.0.0.0", 443), config)
+    .bind_rustls(("0.0.0.0", *HTTPS_PORT.get().unwrap()), config)
     .unwrap()
     .run()
     .await

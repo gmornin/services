@@ -1,5 +1,4 @@
 use crate::{
-    functions::get_accounts,
     structs::Trigger,
     traits::{CollectionItem, Triggerable},
     *,
@@ -11,7 +10,7 @@ use lettre::{
     message::{header::ContentType, MessageBuilder},
     AsyncSmtpTransport, AsyncTransport, Tokio1Executor,
 };
-use mongodb::{bson::doc, Database};
+use mongodb::bson::doc;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -25,7 +24,7 @@ pub struct EmailVerification {
 #[typetag::serde]
 #[async_trait]
 impl Triggerable for EmailVerification {
-    async fn init(&self, _db: &Database, id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
+    async fn init(&self, id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
         let message = MessageBuilder::new()
             .from(SMTP_FROM.get().unwrap().parse()?)
             .to(format!("{}<{}>", self.username, self.email).parse()?)
@@ -48,8 +47,8 @@ impl Triggerable for EmailVerification {
         Ok(())
     }
 
-    async fn trigger(&self, db: &Database, _id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
-        let accounts = get_accounts(db);
+    async fn trigger(&self, _id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
+        let accounts = ACCOUNTS.get().unwrap();
         let mut account = accounts
             .find_one(doc! {"_id": &self.id}, None)
             .await?
@@ -64,7 +63,7 @@ impl Triggerable for EmailVerification {
         }
 
         account.verified = true;
-        account.save_replace(&accounts).await?;
+        account.save_replace(accounts).await?;
 
         Ok(())
     }

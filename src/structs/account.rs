@@ -30,6 +30,9 @@ pub struct Account {
 
     #[serde(default)]
     pub services: Vec<GMServices>,
+
+    #[serde(default)]
+    pub counters: AccountCounters,
 }
 
 impl Account {
@@ -58,6 +61,8 @@ impl Account {
             created: now,
 
             services: Vec::new(),
+
+            counters: AccountCounters::default(),
         })
     }
 
@@ -241,6 +246,24 @@ impl From<V1IdentifierType> for IdentifierType {
             V1IdentifierType::Email => Self::Email,
             V1IdentifierType::Username => Self::Username,
             V1IdentifierType::Id => Self::Id,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AccountCounters {
+    #[serde(default = "tex_publishes_default")]
+    pub tex_publishes: i64,
+}
+
+fn tex_publishes_default() -> i64 {
+    1
+}
+
+impl Default for AccountCounters {
+    fn default() -> Self {
+        Self {
+            tex_publishes: tex_publishes_default(),
         }
     }
 }

@@ -2,7 +2,6 @@ use actix_web::Scope;
 
 pub mod accounts;
 pub mod jobs;
-pub mod publish;
 pub mod storage;
 pub mod tex;
 pub mod triggers;
