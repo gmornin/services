@@ -1,5 +1,3 @@
-# Reset pfp
-
 POST `/api/tex/generic/v1/reset-pfp`
 
 ---

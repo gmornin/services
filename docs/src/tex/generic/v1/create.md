@@ -1,5 +1,3 @@
-# Create
-
 POST `/api/tex/generic/v1/create`
 
 ---

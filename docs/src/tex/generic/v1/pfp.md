@@ -1,5 +1,3 @@
-# Pfp
-
 GET `/api/tex/generic/v1/pfp/id/{userid}`
 
 ---

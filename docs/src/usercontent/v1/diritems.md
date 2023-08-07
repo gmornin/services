@@ -1,4 +1,4 @@
-GET `/api/usercontent/v1/diritems/[userid]/[path]`
+GET `/api/usercontent/v1/diritems/id/[userid]/[path]`
 
 ---
 

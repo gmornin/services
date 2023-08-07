@@ -1,5 +1,3 @@
-# Simple
-
 POST `/api/tex/compile/v1/simple`
 
 ---

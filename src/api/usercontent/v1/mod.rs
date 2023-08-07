@@ -4,7 +4,6 @@ mod diritems;
 mod exists;
 mod file;
 mod tree;
-// mod main;
 
 pub fn scope() -> Scope {
     Scope::new("/v1")

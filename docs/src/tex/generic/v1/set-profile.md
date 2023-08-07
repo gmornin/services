@@ -1,5 +1,3 @@
-# Set profile
-
 POST `/api/tex/generic/v1/set-profile`
 
 ---

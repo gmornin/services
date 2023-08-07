@@ -1,10 +1,10 @@
-GET `/api/usercontent/v1/file/[userid]/[path]`
+GET `/api/usercontent/v1/file/id/[userid]/[path]`
 
 ---
 
 Returns file content.
 
-For example to access `/dir/file.txt` in user with ID 1's storage, you GET `/api/usercontent/v1/diritems/1/dir/file.txt`, where `/dir/file.txt` is a file.
+For example to access `/dir/file.txt` in user with ID 1's storage, you GET `/api/usercontent/v1/file/id/1/dir/file.txt`, where `/dir/file.txt` is a file.
 
 ## Response
 

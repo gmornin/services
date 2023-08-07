@@ -25,7 +25,10 @@ async fn publish_task(post: Json<V1Publish>) -> Result<V1Response, Box<dyn Error
 
     let copy_from = get_user_dir(account.id, None).join(&user_path);
 
-    println!("{copy_from:?}");
+    if !fs::try_exists(&copy_from).await? {
+        return Err(V1Error::FileNotFound.into());
+    }
+
     let metadata = fs::metadata(&copy_from).await?;
 
     if !metadata.is_file() {

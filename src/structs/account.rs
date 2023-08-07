@@ -149,7 +149,14 @@ impl Account {
     pub async fn v1_get_by_id(id: i64) -> Result<Self, Box<dyn Error>> {
         match Account::find_by_id(id, ACCOUNTS.get().unwrap()).await? {
             Some(acc) => Ok(acc),
-            None => Err(V1Error::InvalidToken.into()),
+            None => Err(V1Error::NoSuchUser.into()),
+        }
+    }
+
+    pub async fn v1_get_by_username(username: String) -> Result<Self, Box<dyn Error>> {
+        match Account::find_by_username(username).await? {
+            Some(acc) => Ok(acc),
+            None => Err(V1Error::NoSuchUser.into()),
         }
     }
 

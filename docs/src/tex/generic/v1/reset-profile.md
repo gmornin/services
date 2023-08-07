@@ -1,5 +1,3 @@
-# Reset profile
-
 POST `/api/tex/generic/v1/reset-pfp`
 
 ---

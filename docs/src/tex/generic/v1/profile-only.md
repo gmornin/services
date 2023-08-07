@@ -1,5 +1,3 @@
-# Profile only
-
 GET `/api/tex/generic/v1/profile-only/id/{userid}`
 
 ---

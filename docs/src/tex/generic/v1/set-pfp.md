@@ -1,5 +1,3 @@
-# Set pfp
-
 POST with multipart `/api/tex/generic/v1/set-pfp/{id}`
 
 ---

@@ -1,3 +1,6 @@
+use futures_util::StreamExt;
+use goodmorning_bindings::services::v1::V1TexUserPublish;
+use mongodb::options::FindOptions;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -40,5 +43,41 @@ impl TexPublish {
         *publishid += 1;
 
         Ok(s)
+    }
+
+    pub async fn list(
+        userid: i64,
+        mut page: u64,
+        page_size: u64,
+    ) -> Result<Vec<TexPublish>, Box<dyn Error>> {
+        let collection = get_tex_userpublishes(userid);
+
+        page = page.saturating_sub(1);
+
+        let mut find_options = FindOptions::default();
+        find_options.skip = Some(page * page_size); // Skip the first 9 documents
+        find_options.limit = Some(page_size as i64); // Retrieve 11 documents (10th to 20th)
+
+        let mut cursor = collection.find(None, find_options).await.unwrap();
+
+        let mut items = Vec::with_capacity(page_size as usize);
+
+        while let Some(document) = cursor.next().await {
+            items.push(document?)
+        }
+
+        Ok(items)
+    }
+}
+
+impl From<TexPublish> for V1TexUserPublish {
+    fn from(val: TexPublish) -> Self {
+        V1TexUserPublish {
+            id: val.id,
+            published: val.published,
+            title: val.title,
+            desc: val.desc,
+            ext: val.ext,
+        }
     }
 }

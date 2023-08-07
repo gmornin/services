@@ -5,7 +5,7 @@ use crate::{functions::*, structs::*};
 
 use goodmorning_bindings::services::v1::V1Response;
 
-#[get("/tree/{id}/{path:.*}")]
+#[get("/tree/id/{id}/{path:.*}")]
 pub async fn tree(path: Path<(i64, String)>) -> HttpResponse {
     from_res(tree_task(path).await)
 }

@@ -1,5 +1,3 @@
-# Profile
-
 GET `/api/tex/generic/v1/profile/id/{userid}`
 
 ---
