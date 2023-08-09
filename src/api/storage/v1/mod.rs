@@ -29,6 +29,7 @@ pub fn scope() -> Scope {
         .service(delete::delete)
         .service(touch::touch)
         .service(copy::copy)
+        .service(copy_overwrite::copy_overwrite)
         .service(r#move::r#move)
         .service(file::file)
         .service(diritems::diritems)

@@ -1,9 +1,6 @@
 use actix_web::{web::Json, *};
-use std::{
-    error::Error,
-    path::{Path as FilePath, PathBuf},
-};
-use tokio::{fs, io};
+use std::{error::Error, path::PathBuf};
+use tokio::fs;
 
 use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
 
@@ -33,17 +30,14 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     let to_buf = get_user_dir(account.id, None).join(user_tobuf);
     let from_buf = get_user_dir(post.from_userid, None).join(user_frombuf);
 
-    let mut vis = None;
+    let vis = Visibilities::visibility(&from_buf).await?;
 
     if post.from_userid == account.id {
         if !fs::try_exists(&from_buf).await? {
             return Err(V1Error::FileNotFound.into());
         }
-    } else {
-        vis = Some(Visibilities::visibility(&from_buf).await?.visibility);
-        if !fs::try_exists(&from_buf).await? || vis == Some(ItemVisibility::Private) {
-            return Err(V1Error::FileNotFound.into());
-        }
+    } else if !fs::try_exists(&from_buf).await? || vis.visibility == ItemVisibility::Private {
+        return Err(V1Error::FileNotFound.into());
     }
 
     if from_buf.extension() != to_buf.extension() {
@@ -62,34 +56,39 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         {
             return Err(V1Error::FileTooLarge.into());
         }
-        remove(&to_buf).await?;
         fs::copy(&from_buf, &to_buf).await?;
-    } else if account.id == post.from_userid {
-        if account
-            .exceeds_limit(
-                STORAGE_LIMITS.get().unwrap(),
-                Some(dir_size(&from_buf).await?),
-                None,
-            )
-            .await?
-        {
-            return Err(V1Error::FileTooLarge.into());
-        }
-        fs::remove_dir(&to_buf).await?;
-        copy_folder_owned(&from_buf, &to_buf).await?;
     } else {
-        if account
-            .exceeds_limit(
-                STORAGE_LIMITS.get().unwrap(),
-                Some(dir_size_unowned(&from_buf, vis.unwrap()).await?),
-                None,
-            )
-            .await?
-        {
-            return Err(V1Error::FileTooLarge.into());
+        if fs::try_exists(&to_buf).await? {
+            fs::remove_dir_all(&to_buf).await?;
         }
-        fs::remove_dir(&to_buf).await?;
-        copy_folder_owned(&from_buf, &to_buf).await?;
+        if account.id == post.from_userid {
+            if account
+                .exceeds_limit(
+                    STORAGE_LIMITS.get().unwrap(),
+                    Some(dir_size(&from_buf).await?),
+                    None,
+                )
+                .await?
+            {
+                return Err(V1Error::FileTooLarge.into());
+            }
+            copy_folder_owned(&from_buf, &to_buf).await?;
+        } else {
+            if account
+                .exceeds_limit(
+                    STORAGE_LIMITS.get().unwrap(),
+                    Some(dir_size_unowned(&from_buf, vis.visibility).await?),
+                    None,
+                )
+                .await?
+            {
+                return Err(V1Error::FileTooLarge.into());
+            }
+            if fs::try_exists(&to_buf).await? {
+                fs::remove_dir(&to_buf).await?;
+            }
+            copy_folder_unowned(&from_buf, &to_buf, vis.visibility).await?;
+        }
     }
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;
@@ -118,15 +117,4 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     }
 
     Ok(V1Response::Copied)
-}
-
-async fn remove(path: &FilePath) -> io::Result<()> {
-    if fs::try_exists(path).await? {
-        return Ok(());
-    }
-    if fs::metadata(&path).await?.is_dir() {
-        fs::remove_dir_all(&path).await
-    } else {
-        fs::remove_file(&path).await
-    }
 }

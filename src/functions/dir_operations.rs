@@ -17,12 +17,12 @@ pub async fn copy_folder_owned(src: &Path, dst: &Path) -> std::io::Result<()> {
         if is_bson(&entry_path) {
             continue;
         }
-        let dst_path = dst.join(entry.file_name());
+        let dst = dst.join(entry.file_name());
 
         if entry.metadata().await?.is_dir() {
-            copy_folder_owned(&entry_path, &dst_path).await?;
+            copy_folder_owned(&entry_path, &dst).await?;
         } else {
-            fs::copy(src, dst).await?;
+            fs::copy(entry_path, &dst).await?;
         }
     }
     // if fs::metadata(src).await?.is_dir() {
@@ -57,10 +57,10 @@ pub async fn copy_folder_unowned(
             continue;
         }
 
-        let dst_path = dst.join(entry.file_name());
+        let dst = dst.join(entry.file_name());
 
         if entry.metadata().await?.is_dir() {
-            copy_folder_owned(&entry_path, &dst_path).await?;
+            copy_folder_owned(&entry_path, &dst).await?;
         } else {
             fs::copy(src, dst).await?;
         }
@@ -103,8 +103,7 @@ pub async fn dirtree(
                     last_modified: metadata
                         .modified()
                         .unwrap_or(UNIX_EPOCH)
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
+                        .duration_since(UNIX_EPOCH)?
                         .as_secs(),
                     size: metadata.len(),
                 },
