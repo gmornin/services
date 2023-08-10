@@ -16,5 +16,3 @@ pub use jobs::*;
 // pub use sse::*;
 mod configs;
 pub use configs::*;
-mod tex;
-pub use tex::*;

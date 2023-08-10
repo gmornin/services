@@ -6,5 +6,3 @@ mod storage;
 pub use storage::*;
 mod defaults;
 pub use defaults::*;
-mod tex;
-pub use tex::*;

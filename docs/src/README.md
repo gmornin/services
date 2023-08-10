@@ -19,6 +19,8 @@ If you are using this as a dependency (such as `gmt-server`):
 
 - Run `goodmorning_services::init()` at the beginning.
 
+> Note that other more specialised servers may have additional API endpoints.
+
 ## Bindings
 
 - [Rust](https://github.com/GoodMorning-Network/rust-bindings)

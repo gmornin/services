@@ -12,7 +12,7 @@ use crate::{
     functions::{get_accounts, get_client, get_counters, get_database, get_triggers},
     structs::{
         Account, Counter, CredentialsConfig, DefaultsConfig, ItemVisibility, LimitsConfig,
-        StorageConfig, StorageLimitConfigs, TexConfig, Trigger,
+        StorageConfig, StorageLimitConfigs, Trigger,
     },
     traits::ConfigTrait,
 };
@@ -50,8 +50,6 @@ pub static ACCOUNTS: OnceCell<Collection<Account>> = OnceCell::new();
 pub static TRIGGERS: OnceCell<Collection<Trigger>> = OnceCell::new();
 pub static COUNTERS: OnceCell<Collection<Counter>> = OnceCell::new();
 pub static MIME_DB: OnceCell<SharedMimeInfo> = OnceCell::new();
-
-pub static TEX_DB: OnceCell<Database> = OnceCell::new();
 
 pub async fn init() {
     let configs = home_dir().unwrap().join(".config/gm/");
@@ -113,11 +111,6 @@ pub async fn init() {
     TRIGGERS.set(get_triggers()).unwrap();
     COUNTERS.set(get_counters()).unwrap();
     MIME_DB.set(SharedMimeInfo::new()).ok().unwrap();
-
-    let tex_config = *TexConfig::load().unwrap();
-    TEX_DB
-        .set(get_database(&mongo_client, &tex_config.db_name))
-        .unwrap();
 }
 
 fn parse_path(mut s: String) -> PathBuf {

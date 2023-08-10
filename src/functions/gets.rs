@@ -48,7 +48,3 @@ pub fn get_user_dir(id: i64, service: Option<GMServices>) -> PathBuf {
 pub fn get_usersys_dir(id: i64, service: Option<GMServices>) -> PathBuf {
     get_user_dir(id, service).join(".system")
 }
-
-pub fn get_tex_userpublishes(id: i64) -> Collection<TexPublish> {
-    TEX_DB.get().unwrap().collection(&format!("publishes-{id}"))
-}

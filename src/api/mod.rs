@@ -3,7 +3,6 @@ use actix_web::Scope;
 pub mod accounts;
 pub mod jobs;
 pub mod storage;
-pub mod tex;
 pub mod triggers;
 pub mod usercontent;
 
@@ -13,6 +12,5 @@ pub fn scope() -> Scope {
         .service(storage::scope())
         .service(triggers::scope())
         .service(usercontent::scope())
-        .service(tex::scope())
         .service(jobs::scope())
 }
