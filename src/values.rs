@@ -9,7 +9,7 @@ use mongodb::{Collection, Database};
 use xdg_mime::SharedMimeInfo;
 
 use crate::{
-    functions::{get_accounts, get_client, get_counters, get_database, get_triggers},
+    functions::{get_accounts, get_client, get_counters, get_database, get_triggers, parse_path},
     structs::{
         Account, Counter, CredentialsConfig, DefaultsConfig, ItemVisibility, LimitsConfig,
         StorageConfig, StorageLimitConfigs, Trigger,
@@ -111,16 +111,4 @@ pub async fn init() {
     TRIGGERS.set(get_triggers()).unwrap();
     COUNTERS.set(get_counters()).unwrap();
     MIME_DB.set(SharedMimeInfo::new()).ok().unwrap();
-}
-
-fn parse_path(mut s: String) -> PathBuf {
-    if s.starts_with('~') {
-        s = s.replacen(
-            '~',
-            dirs::home_dir().unwrap().as_os_str().to_str().unwrap(),
-            1,
-        );
-    }
-
-    PathBuf::from(s)
 }

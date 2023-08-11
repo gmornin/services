@@ -1,4 +1,7 @@
-use std::{ffi::OsStr, path::Path};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 
 use crate::structs::GMServices;
 
@@ -25,4 +28,16 @@ pub fn is_bson(path: &Path) -> bool {
 pub fn has_dotdot(path: &Path) -> bool {
     path.iter()
         .any(|section| matches!(section.to_str().unwrap(), "." | ".."))
+}
+
+pub fn parse_path(mut s: String) -> PathBuf {
+    if s.starts_with('~') {
+        s = s.replacen(
+            '~',
+            dirs::home_dir().unwrap().as_os_str().to_str().unwrap(),
+            1,
+        );
+    }
+
+    PathBuf::from(s)
 }
