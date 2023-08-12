@@ -9,3 +9,4 @@ mod values;
 pub use values::*;
 
 mod tests;
+pub use goodmorning_bindings as bindings;

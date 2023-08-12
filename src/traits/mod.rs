@@ -4,3 +4,5 @@ mod triggerable;
 pub use triggerable::*;
 mod configtrait;
 pub use configtrait::*;
+mod taskitem;
+pub use taskitem::*;

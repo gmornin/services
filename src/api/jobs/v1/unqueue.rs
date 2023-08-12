@@ -6,7 +6,7 @@ use actix_web::{
     web::{self, Json},
     HttpResponse,
 };
-use goodmorning_bindings::services::v1::{V1Response, V1Unqueue};
+use goodmorning_bindings::services::v1::{V1Error, V1Response, V1Unqueue};
 
 #[post("/unqueue")]
 async fn unqueue(post: Json<V1Unqueue>, userjobs: web::Data<Jobs>) -> HttpResponse {
@@ -21,6 +21,9 @@ async fn unqueue_task(
         .await?
         .v1_restrict_verified()?;
 
-    userjobs.unqueue(account.id, post.id)?;
+    if !userjobs.unqueue(account.id, post.id) {
+        return Err(V1Error::JobNotFound.into());
+    }
+
     Ok(V1Response::Unqueued)
 }

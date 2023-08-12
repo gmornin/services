@@ -50,24 +50,24 @@ Each user is allowed:
 
 Once the current running task has been completed, the next oldest task in queue (if not empty) will be ran.
 
-#### Profile system (Tex)
-
-Currently, user profile along with the user's profile picture are stored as files under the user's private folder (within `/tex/.system/`). This may be subject to change as there might be benefits of storing it in MongoDB, such as ease of indexing for search and speed.
-
-The user is allowed to make basic modifications to their bio/user description, profile picture, and add connection badges to their profile.
-
-#### Compiling (Tex)
-
-One of the core features of GM Tex is the ability to compile files from one formats to another.
-
-Currently, here are the valid compilations.
-
-|Original|Destination|Compiler|
-|---|---|---|
-|Markdown|Html|[Pulldown Cmark](https://github.com/raphlinus/pulldown-cmark)|
-|LaTex|PDF|[PDFlatex](https://man.archlinux.org/man/pdflatex.1.en)|
-
-> Note that users may only use files in their own user directory when compiling with PDFlatex.
+<!-- #### Profile system (Tex) -->
+<!--  -->
+<!-- Currently, user profile along with the user's profile picture are stored as files under the user's private folder (within `/tex/.system/`). This may be subject to change as there might be benefits of storing it in MongoDB, such as ease of indexing for search and speed. -->
+<!--  -->
+<!-- The user is allowed to make basic modifications to their bio/user description, profile picture, and add connection badges to their profile. -->
+<!--  -->
+<!-- #### Compiling (Tex) -->
+<!--  -->
+<!-- One of the core features of GM Tex is the ability to compile files from one formats to another. -->
+<!--  -->
+<!-- Currently, here are the valid compilations. -->
+<!--  -->
+<!-- |Original|Destination|Compiler| -->
+<!-- |---|---|---| -->
+<!-- |Markdown|Html|[Pulldown Cmark](https://github.com/raphlinus/pulldown-cmark)| -->
+<!-- |LaTex|PDF|[PDFlatex](https://man.archlinux.org/man/pdflatex.1.en)| -->
+<!--  -->
+<!-- > Note that users may only use files in their own user directory when compiling with PDFlatex. -->
 
 ## Usage
 
