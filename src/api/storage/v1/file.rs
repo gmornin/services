@@ -22,7 +22,7 @@ struct DisplayType {
 }
 
 #[get("/file/{token}/{path:.*}")]
-pub async fn file(
+async fn file(
     path: Path<(String, String)>,
     req: HttpRequest,
     query: Query<DisplayType>,

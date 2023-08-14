@@ -131,24 +131,15 @@ api/
 │       ├── login
 │       ├── delete
 │       └── ...
-├── storage/
-│   └── v1/
-│       ├── upload
-│       ├── copy
-│       └── dir-items
-└── tex/
-    ├── generic/
-    │   └── v1/
-    │       ├── set-status
-    │       └── profile
-    └── compile/
-        └── v1/
-            ├── simple
-            └── ...
+└── storage/
+    └── v1/
+        ├── upload
+        ├── copy
+        └── dir-items
 ```
 
 Note that the API is divided into modules, and each service/module can have its own versions. For example `accounts` can be still at `v1` while `storage` is already updated to `v3`.
 
-Seen both `generic` and `compile` goes under `tex/`, here `tex/` is a *category* rather than a service. As they are both closely related to the project of GM Tex.
+Servers based on this crate can add extra services, like how [GM Tex](https://github.com/gmornin/gmt-server) added API routes at `/api/compile/`.
 
 > TODO would be allowing categories and services to be enabled/disabled in config, as well as conditionally compiling certain services (feature gating).

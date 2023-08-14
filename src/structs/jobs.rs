@@ -7,10 +7,8 @@ use std::{
 
 use goodmorning_bindings::{services::v1::*, structs::*};
 
-use tokio::{
-    sync::oneshot::{self, Sender},
-    time::timeout,
-};
+use tokio::sync::oneshot::{self, Sender};
+use tokio::time::sleep;
 
 use crate::traits::TaskItem;
 
@@ -106,28 +104,11 @@ impl Job {
             let arc = arc.clone();
 
             let _handle = tokio::task::spawn(async move {
-                // timeout(
-                //     Duration::from_secs(120),
-                //     jobwrapper.job.task.run(jobwrapper.tx, job.id),
-                // )
-                timeout(Duration::from_secs(120), async {
-                    match jobwrapper.api_ver {
-                        ApiVer::V1 => {
-                            let res =
-                                jobwrapper.job.task.run_v1(job.id).await.map_err(|e| match e
-                                    .downcast_ref::<V1Error>()
-                                {
-                                    Some(e) => e.to_owned(),
-                                    None => V1Error::External {
-                                        content: e.to_string(),
-                                    },
-                                });
-                            jobwrapper.tx.send(CommonRes::V1(res)).unwrap();
-                        }
-                    }
-                })
-                .await
-                .unwrap();
+                jobwrapper.tx.send(tokio::select! {
+                    res = jobwrapper.job.task.run(&jobwrapper.api_ver, job.id) => res,
+                    _ = sleep(Duration::from_secs(20)) => CommonRes::timedout(&jobwrapper.api_ver)
+                }).unwrap();
+
                 let mut unlocked = arc.lock().unwrap();
                 unlocked.done(jobwrapper.job.id).unwrap();
                 unlocked.bump(max_concurrent, &arc)
@@ -176,7 +157,7 @@ impl SingleJob {
     pub fn to_v1(&self) -> V1Job {
         V1Job {
             id: self.id,
-            task: self.task.to_v1(),
+            task: self.task.to(&ApiVer::V1),
         }
     }
 }

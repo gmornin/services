@@ -1,15 +1,16 @@
 use async_trait::async_trait;
 use dyn_clone::DynClone;
-use goodmorning_bindings::services::v1::V1Response;
-use goodmorning_bindings::traits::TaskRes;
-use std::{error::Error, fmt::Debug};
+use goodmorning_bindings::structs::ApiVer;
+use goodmorning_bindings::structs::CommonRes;
+use goodmorning_bindings::traits::SerdeAny;
+use std::fmt::Debug;
 
 #[async_trait]
 pub trait TaskItem: DynClone + Debug + Sync + Send {
-    #[cfg(feature = "v1")]
-    async fn run_v1(&self, taskid: u64) -> Result<V1Response, Box<dyn Error>>;
-    #[cfg(feature = "v1")]
-    fn to_v1(&self) -> Box<dyn TaskRes>;
+    // #[cfg(feature = "v1")]
+    async fn run(&self, ver: &ApiVer, taskid: u64) -> CommonRes;
+    // #[cfg(feature = "v1")]
+    fn to(&self, ver: &ApiVer) -> Box<dyn SerdeAny>;
 }
 
 dyn_clone::clone_trait_object!(TaskItem);

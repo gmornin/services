@@ -40,7 +40,7 @@ pub static USERCONTENT: OnceCell<PathBuf> = OnceCell::new();
 pub static LOGS_PATH: OnceCell<PathBuf> = OnceCell::new();
 pub static SELF_ADDR: OnceCell<String> = OnceCell::new();
 
-pub static PFP_DEFAULT: OnceCell<PathBuf> = OnceCell::new();
+// pub static PFP_DEFAULT: OnceCell<PathBuf> = OnceCell::new();
 pub static VIS_DEFAULT: OnceCell<ItemVisibility> = OnceCell::new();
 pub static HTTP_PORT: OnceCell<u16> = OnceCell::new();
 pub static HTTPS_PORT: OnceCell<u16> = OnceCell::new();
@@ -97,9 +97,9 @@ pub async fn init() {
 
     let mongo_client = get_client().await;
     let defaults_config = *DefaultsConfig::load().unwrap();
-    PFP_DEFAULT
-        .set(parse_path(defaults_config.pfp_default_path))
-        .unwrap();
+    // PFP_DEFAULT
+    //     .set(parse_path(defaults_config.pfp_default_path))
+    //     .unwrap();
     VIS_DEFAULT.set(defaults_config.default_visibility).unwrap();
     HTTP_PORT.set(defaults_config.http_port).unwrap();
     HTTPS_PORT.set(defaults_config.https_port).unwrap();
