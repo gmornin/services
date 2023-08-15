@@ -27,7 +27,7 @@ impl Counter {
                 .count
         } else {
             get_counters_doc()
-                .insert_one(doc! {"_id": id, "count": 1}, None)
+                .insert_one(doc! {"_id": id, "count": 2}, None)
                 .await?;
             1
         })
