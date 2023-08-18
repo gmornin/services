@@ -12,8 +12,7 @@ async fn rename(post: Json<V1RenameAccount>) -> HttpResponse {
 async fn rename_task(post: Json<V1RenameAccount>) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
 
-    let re = regex::Regex::new(r"^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$").unwrap();
-    if !re.is_match(&post.new) || post.new.len() > 32 || post.new.len() < 3 {
+    if !Account::username_valid(&post.new) {
         return Err(V1Error::InvalidUsername.into());
     }
 

@@ -97,6 +97,13 @@ impl Account {
     pub fn change_password(&mut self, new: &str) {
         self.password_hash = Self::hash_with_id(new, &self.id.to_string());
     }
+
+    pub fn username_valid(s: &str) -> bool {
+        s.len() < 33
+            && s.len() > 2
+            && s.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+    }
 }
 
 impl Account {

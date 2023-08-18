@@ -5,6 +5,10 @@
 use dirs::home_dir;
 use lettre::transport::smtp::authentication::Credentials;
 use mongodb::{Collection, Database};
+use rustls::{Certificate, PrivateKey, ServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
+use serde::{Deserialize, Serialize};
+use simplelog::*;
 
 use xdg_mime::SharedMimeInfo;
 
@@ -17,7 +21,12 @@ use crate::{
     traits::ConfigTrait,
 };
 use once_cell::sync::OnceCell;
-use std::{fs, path::PathBuf, time::Duration};
+use std::{
+    fs::{self, File},
+    io::BufReader,
+    path::PathBuf,
+    time::Duration,
+};
 
 pub static PFP_LIMIT: OnceCell<u64> = OnceCell::new();
 pub static QUEUE_LIMIT: OnceCell<usize> = OnceCell::new();
@@ -25,6 +34,7 @@ pub static MAX_CONCURRENT: OnceCell<usize> = OnceCell::new();
 pub static STORAGE_LIMITS: OnceCell<StorageLimitConfigs> = OnceCell::new();
 pub static EMAIL_VERIFICATION_DURATION: OnceCell<Duration> = OnceCell::new();
 pub static EMAIL_VERIFICATION_COOLDOWN: OnceCell<u64> = OnceCell::new();
+pub static ALLOW_REGISTER: OnceCell<bool> = OnceCell::new();
 
 pub static HASH_SALT: OnceCell<String> = OnceCell::new();
 pub static SMTP_USERNAME: OnceCell<String> = OnceCell::new();
@@ -51,7 +61,7 @@ pub static TRIGGERS: OnceCell<Collection<Trigger>> = OnceCell::new();
 pub static COUNTERS: OnceCell<Collection<Counter>> = OnceCell::new();
 pub static MIME_DB: OnceCell<SharedMimeInfo> = OnceCell::new();
 
-pub async fn init() {
+pub async fn valinit() {
     let configs = home_dir().unwrap().join(".config/gm/");
 
     if !configs.exists() {
@@ -71,6 +81,7 @@ pub async fn init() {
     EMAIL_VERIFICATION_COOLDOWN
         .set(limit_configs.verification_cooldown)
         .unwrap();
+    ALLOW_REGISTER.set(limit_configs.allow_register).unwrap();
 
     let cert_config = *CredentialsConfig::load().unwrap();
     HASH_SALT.set(cert_config.hash_salt).unwrap();
@@ -111,4 +122,106 @@ pub async fn init() {
     TRIGGERS.set(get_triggers()).unwrap();
     COUNTERS.set(get_counters()).unwrap();
     MIME_DB.set(SharedMimeInfo::new()).ok().unwrap();
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+pub enum LevelFilterSerde {
+    Off,
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl From<LevelFilterSerde> for LevelFilter {
+    fn from(val: LevelFilterSerde) -> Self {
+        match val {
+            LevelFilterSerde::Off => LevelFilter::Off,
+            LevelFilterSerde::Warn => LevelFilter::Warn,
+            LevelFilterSerde::Info => LevelFilter::Info,
+            LevelFilterSerde::Error => LevelFilter::Error,
+            LevelFilterSerde::Debug => LevelFilter::Debug,
+            LevelFilterSerde::Trace => LevelFilter::Trace,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LogOptions {
+    pub loglabel: String,
+    pub termlogging: bool,
+    pub writelogging: bool,
+    pub term_log_level: LevelFilterSerde,
+    pub write_log_level: LevelFilterSerde,
+}
+
+pub async fn init() {
+    sudo::escalate_if_needed().unwrap();
+
+    valinit().await;
+}
+
+pub fn logs_init(options: &LogOptions) {
+    let mut loggers: Vec<Box<dyn SharedLogger + 'static>> = Vec::new();
+    let path = LOGS_PATH.get().unwrap();
+    if options.termlogging && !path.exists() {
+        fs::create_dir_all(path).unwrap();
+        loggers.push(TermLogger::new(
+            options.term_log_level.into(),
+            Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ));
+    }
+
+    if options.writelogging {
+        loggers.push(WriteLogger::new(
+            options.write_log_level.into(),
+            Config::default(),
+            std::fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(LOGS_PATH.get().unwrap().join(format!(
+                    "{}-{}.log",
+                    options.loglabel,
+                    chrono::Utc::now()
+                )))
+                .unwrap(),
+        ))
+    }
+
+    CombinedLogger::init(loggers).unwrap();
+}
+
+pub fn load_rustls_config(chain: &PathBuf, key: &PathBuf) -> rustls::ServerConfig {
+    // init server config builder with safe defaults
+    let config = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth();
+
+    // load TLS key/cert files
+    let cert_file = &mut BufReader::new(File::open(chain).unwrap());
+    let key_file = &mut BufReader::new(File::open(key).unwrap());
+
+    // convert files to key/cert objects
+    let cert_chain = certs(cert_file)
+        .unwrap()
+        .into_iter()
+        .map(Certificate)
+        .collect();
+    let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)
+        .unwrap()
+        .into_iter()
+        .map(PrivateKey)
+        .collect();
+
+    // exit if no keys could be parsed
+    if keys.is_empty() {
+        eprintln!("Could not locate PKCS 8 private keys.");
+        std::process::exit(1);
+    }
+
+    config.with_single_cert(cert_chain, keys.remove(0)).unwrap()
 }

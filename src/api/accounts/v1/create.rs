@@ -11,9 +11,12 @@ async fn create(post: Json<V1All3>) -> HttpResponse {
 }
 
 async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {
+    if !ALLOW_REGISTER.get().unwrap() {
+        return Err(V1Error::FeatureDisabled.into());
+    }
+
     let post = post.into_inner();
-    let re = regex::Regex::new(r"^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$").unwrap();
-    if !re.is_match(&post.username) || post.username.len() > 32 || post.username.len() < 3 {
+    if !Account::username_valid(&post.username) {
         return Err(V1Error::InvalidUsername.into());
     }
 

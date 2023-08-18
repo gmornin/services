@@ -14,6 +14,8 @@ pub struct LimitsConfig {
     pub pfp_limit: u64,
     #[serde(default)]
     pub jobs: QueueConfigs,
+    #[serde(default = "allow_register_default")]
+    pub allow_register: bool,
 }
 
 impl Default for LimitsConfig {
@@ -24,8 +26,13 @@ impl Default for LimitsConfig {
             storage_limits: StorageLimitConfigs::default(),
             pfp_limit: pfp_limit_default(),
             jobs: QueueConfigs::default(),
+            allow_register: allow_register_default(),
         }
     }
+}
+
+fn allow_register_default() -> bool {
+    true
 }
 
 impl ConfigTrait for LimitsConfig {
