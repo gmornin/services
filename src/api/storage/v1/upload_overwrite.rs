@@ -1,5 +1,6 @@
 use actix_multipart::Multipart;
 use actix_web::{web::Path, *};
+use log::*;
 use std::{error::Error, path::PathBuf};
 use tokio::{
     fs::{self, OpenOptions},
@@ -75,7 +76,7 @@ async fn upload_overwrite_task(
             Some((mime, _))
                 if !expected.is_empty() && !expected_collapsed.contains(&mime.essence_str()) =>
             {
-                println!("got: {mime} expected: {expected:?}");
+                error!("got: {mime} expected: {expected:?}");
                 return Err(V1Error::FileTypeMismatch {
                     expected: expected[0].to_string(),
                     got: mime.to_string(),

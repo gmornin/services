@@ -104,7 +104,7 @@ impl Account {
         ACCOUNTS
             .get()
             .unwrap()
-            .find_one(doc! {"username": case_insensitive(username)}, None)
+            .find_one(doc! {"username":  case_insensitive(username)}, None)
             .await
     }
 

@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    error::Error,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -31,21 +30,23 @@ impl Jobs {
             .clone()
     }
 
-    pub async fn v1_run_with_limit(
+    pub async fn run_with_limit(
         &self,
         id: i64,
         task: Box<dyn TaskItem>,
         max_concurrent: usize,
-    ) -> Result<V1Response, Box<dyn Error>> {
+        ver: ApiVer,
+    ) -> CommonRes {
         let arc = self.get(id);
 
-        Job::v1_run_with_limit(
+        Job::run_with_limit(
             arc,
             max_concurrent,
             SingleJob {
                 task,
                 id: fastrand::u64(..),
             },
+            ver,
         )
         .await
     }
@@ -72,16 +73,18 @@ impl Job {
         true
     }
 
-    async fn v1_run_with_limit(
+    async fn run_with_limit(
         arc: Arc<Mutex<Self>>,
         max_concurrent: usize,
         job: SingleJob,
-    ) -> Result<V1Response, Box<dyn Error>> {
+        ver: ApiVer,
+    ) -> CommonRes {
         let (tx, rx) = oneshot::channel();
+        let jobid = job.id;
         let job = SingleJobWrapper {
             job,
             tx,
-            api_ver: ApiVer::V1,
+            api_ver: ver,
         };
 
         {
@@ -90,10 +93,15 @@ impl Job {
             unlocked.bump(max_concurrent, &arc);
         }
 
-        Ok(match rx.await?.try_into()? {
+        match rx.await {
             Ok(res) => res,
-            Err(e) => V1Response::Error { kind: e },
-        })
+            Err(e) => {
+                let mut unlocked = arc.lock().unwrap();
+                unlocked.done(jobid).unwrap();
+                unlocked.bump(max_concurrent, &arc);
+                CommonRes::external(e.to_string(), &ver)
+            }
+        }
     }
 
     fn bump(&mut self, max_concurrent: usize, arc: &Arc<Mutex<Self>>) {
