@@ -31,6 +31,7 @@ pub fn scope() -> Scope {
         .service(copy::copy)
         .service(copy_overwrite::copy_overwrite)
         .service(r#move::r#move)
+        .service(move_overwrite::r#move)
         .service(file::file)
         .service(diritems::diritems)
         .service(tree::tree)

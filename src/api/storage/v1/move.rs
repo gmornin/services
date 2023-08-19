@@ -6,7 +6,7 @@ use goodmorning_bindings::services::v1::{V1Error, V1Response, V1SelfFromTo};
 
 use crate::{functions::*, structs::*};
 
-#[post("/move/{path:.*}")]
+#[post("/move")]
 pub async fn r#move(post: Json<V1SelfFromTo>) -> HttpResponse {
     from_res(move_task(post).await)
 }

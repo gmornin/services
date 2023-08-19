@@ -6,7 +6,7 @@ use goodmorning_bindings::services::v1::{V1Error, V1Response, V1SelfFromTo};
 
 use crate::{functions::*, structs::*};
 
-#[post("/move-overwrite/{path:.*}")]
+#[post("/move-overwrite")]
 pub async fn r#move(post: Json<V1SelfFromTo>) -> HttpResponse {
     from_res(move_overwrite_task(post).await)
 }
@@ -36,12 +36,6 @@ async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box
 
     if from_buf.extension() != to_buf.extension() {
         return Err(V1Error::ExtensionMismatch.into());
-    }
-
-    if fs::metadata(&to_buf).await?.is_dir() {
-        fs::remove_dir_all(&to_buf).await?;
-    } else {
-        fs::remove_file(&to_buf).await?;
     }
 
     fs::rename(&from_buf, &to_buf).await?;
