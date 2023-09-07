@@ -101,5 +101,10 @@ pub async fn dir_items(
         }
     }
 
+    items.sort_by(|item1, item2| match (item1.is_file, item2.is_file) {
+        (false, true) => std::cmp::Ordering::Less,
+        (true, false) => std::cmp::Ordering::Greater,
+        _ => item1.name.cmp(&item2.name),
+    });
     Ok(items)
 }

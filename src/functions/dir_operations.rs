@@ -115,6 +115,17 @@ pub async fn dirtree(
         items.push(item);
     }
 
+    items.sort_by(|item1, item2| {
+        match (
+            matches!(item1.content, V1DirTreeItem::Dir { .. }),
+            matches!(item2.content, V1DirTreeItem::Dir { .. }),
+        ) {
+            (false, true) => std::cmp::Ordering::Less,
+            (true, false) => std::cmp::Ordering::Greater,
+            _ => item1.name.cmp(&item2.name),
+        }
+    });
+
     Ok(V1DirTreeNode {
         name: src.file_stem().unwrap().to_string_lossy().to_string(),
         visibility: vis.into(),
