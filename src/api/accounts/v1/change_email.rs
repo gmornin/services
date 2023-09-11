@@ -14,6 +14,10 @@ async fn change_email(post: Json<V1ChangeEmail>) -> HttpResponse {
 async fn change_email_task(post: Json<V1ChangeEmail>) -> Result<V1Response, Box<dyn Error>> {
     let mut account = Account::v1_get_by_token(&post.token).await?;
 
+    if !account.password_matches(&post.password) {
+        return Err(V1Error::PasswordIncorrect.into());
+    }
+
     let now = chrono::Utc::now().timestamp() as u64;
     let cooldown = EMAIL_VERIFICATION_COOLDOWN.get().unwrap();
     let diff = now - account.last_verify;
@@ -24,12 +28,14 @@ async fn change_email_task(post: Json<V1ChangeEmail>) -> Result<V1Response, Box<
         .into());
     }
 
-    if Account::find_by_email(&post.email).await?.is_some() {
+    if account.email == post.new.to_lowercase()
+        || Account::find_by_email(&post.new).await?.is_some()
+    {
         return Err(V1Error::EmailTaken.into());
     }
 
     account.verified = false;
-    account.email = post.email.to_lowercase();
+    account.email = post.new.to_lowercase();
     account.email_verification().await?;
     account.last_verify = now;
 

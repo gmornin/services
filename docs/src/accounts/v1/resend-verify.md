@@ -1,14 +1,13 @@
-POST `/api/accounts/v1/delete`
+POST `/api/accounts/v1/resend-verify`
 
 ---
 
-Delete an account
+Resend verification message to email.
 
 ## Request
 
 ```json
 {
-  "password": String,
   "token": String
 }
 ```
@@ -19,12 +18,13 @@ Status code: `200`
 
 ```json
 {
-  "type": "deleted"
+  "type": "verification sent"
 }
 ```
 
 ## Possible errors
 
 - `invalid token`
-- `password incorrect`
+- `nothing changed`
+- `cooldown`
 - `external`

@@ -1,4 +1,4 @@
-POST `/api/accounts/v1/regeneratetoken`
+POST `/api/accounts/v1/change-email`
 
 ---
 
@@ -8,6 +8,7 @@ Regenerate your token, invalidating all other logins.
 
 ```json
 {
+  "new": String, // the email you want to change to
   "token": String,
   "password": String
 }
@@ -19,13 +20,14 @@ Status code: `200`
 
 ```json
 {
-  "type": "regenerated",
-  "token": String
+  "type": "email changed"
 }
 ```
 
 ## Possible errors
 
-- `invalid token`
+- `email taken`
 - `password incorrect`
+- `invalid token`
+- `cooldown`
 - `external`

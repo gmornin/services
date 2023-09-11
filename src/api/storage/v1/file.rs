@@ -17,8 +17,8 @@ use goodmorning_bindings::{
 
 #[derive(Deserialize)]
 struct DisplayType {
-    #[serde(rename = "type")]
-    pub r#type: Option<String>,
+    #[serde(rename = "display")]
+    pub display: Option<String>,
 }
 
 #[get("/file/{token}/{path:.*}")]
@@ -59,9 +59,16 @@ async fn file_task(
         return Err(V1Error::TypeMismatch.into());
     }
 
-    Ok(match query.r#type.as_deref().unwrap_or_default() {
+    Ok(match query.display.as_deref().unwrap_or_default() {
         "inline" => NamedFile::open_async(path_buf)
             .await?
+            .set_content_disposition(ContentDisposition {
+                disposition: http::header::DispositionType::Inline,
+                parameters: Vec::new(),
+            }),
+        "text" => NamedFile::open_async(path_buf)
+            .await?
+            .set_content_type(mime::TEXT_PLAIN)
             .set_content_disposition(ContentDisposition {
                 disposition: http::header::DispositionType::Inline,
                 parameters: Vec::new(),

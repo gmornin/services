@@ -1,4 +1,4 @@
-POST `/api/accounts/v1/regeneratetoken`
+POST `/api/accounts/v1/change-password`
 
 ---
 
@@ -8,8 +8,9 @@ Regenerate your token, invalidating all other logins.
 
 ```json
 {
-  "token": String,
-  "password": String
+  "new": String, // the password you want to change to
+  "old": String,
+  "token": String
 }
 ```
 
@@ -19,13 +20,12 @@ Status code: `200`
 
 ```json
 {
-  "type": "regenerated",
-  "token": String
+  "type": "password changed"
 }
 ```
 
 ## Possible errors
 
-- `invalid token`
 - `password incorrect`
+- `invalid token`
 - `external`

@@ -20,4 +20,5 @@ pub fn scope() -> Scope {
         .service(set_status::set_status)
         .service(change_password::changepw)
         .service(change_email::change_email)
+        .service(resend_verify::resend_verify)
 }
