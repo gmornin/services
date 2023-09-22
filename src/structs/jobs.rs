@@ -22,12 +22,7 @@ pub struct Job {
 
 impl Jobs {
     pub fn get(&self, id: i64) -> Arc<Mutex<Job>> {
-        self.0
-            .lock()
-            .unwrap()
-            .entry(id)
-            .or_insert(Arc::default())
-            .clone()
+        self.0.lock().unwrap().entry(id).or_default().clone()
     }
 
     pub async fn run_with_limit(
@@ -56,7 +51,7 @@ impl Jobs {
             .lock()
             .unwrap()
             .entry(id)
-            .or_insert(Arc::default())
+            .or_default()
             .lock()
             .unwrap()
             .unqueue(jobid)

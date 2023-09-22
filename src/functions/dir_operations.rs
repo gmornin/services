@@ -1,5 +1,5 @@
 use async_recursion::async_recursion;
-use goodmorning_bindings::services::v1::{V1DirTreeItem, V1DirTreeNode};
+use goodmorning_bindings::services::v1::{V1DirTreeItem, V1DirTreeNode, V1Error};
 use std::path::Path;
 use std::{error::Error, time::UNIX_EPOCH};
 use tokio::fs;
@@ -75,8 +75,13 @@ pub async fn dirtree(
     owned: bool,
     vis: Visibility,
 ) -> Result<V1DirTreeNode, Box<dyn Error>> {
-    let mut entries = fs::read_dir(src).await?;
     let visibilities = Visibilities::read_dir(src).await?;
+
+    if !owned && vis.visibility == ItemVisibility::Private {
+        return Err(V1Error::FileNotFound.into());
+    }
+
+    let mut entries = fs::read_dir(src).await?;
 
     let mut items = Vec::new();
     while let Some(entry) = entries.next_entry().await? {
