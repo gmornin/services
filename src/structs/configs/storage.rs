@@ -1,53 +1,24 @@
 use serde::{Deserialize, Serialize};
+use serde_default::DefaultFromSerde;
+use serde_inline_default::serde_inline_default;
 
 use crate::traits::ConfigTrait;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultFromSerde)]
 pub struct StorageConfig {
-    #[serde(default = "self_addr_default")]
+    #[serde_inline_default("such as https://this.site".to_string())]
     pub self_addr: String,
-    #[serde(default = "mongodb_host_default")]
+    #[serde_inline_default("mongodb://localhost:27017".to_string())]
     pub mongo_host: String,
-    #[serde(default = "db_name_default")]
+    #[serde_inline_default("goodmorning-prod".to_string())]
     pub db_name: String,
-    #[serde(default = "usercontent_path_default")]
+    #[serde_inline_default("~/.local/share/gm/usercontent".to_string())]
     pub usercontent_path: String,
-    #[serde(default = "logs_path_default")]
+    #[serde_inline_default("~/.local/share/gm/logs".to_string())]
     pub logs_path: String,
-}
-
-impl Default for StorageConfig {
-    fn default() -> Self {
-        Self {
-            self_addr: self_addr_default(),
-            mongo_host: mongodb_host_default(),
-            db_name: db_name_default(),
-            usercontent_path: usercontent_path_default(),
-            logs_path: logs_path_default(),
-        }
-    }
 }
 
 impl ConfigTrait for StorageConfig {
     const LABEL: &'static str = "storage";
-}
-
-fn self_addr_default() -> String {
-    "such as https://this.site".to_string()
-}
-
-fn mongodb_host_default() -> String {
-    "mongodb://localhost:27017".to_string()
-}
-
-fn db_name_default() -> String {
-    "goodmorning-prod".to_string()
-}
-
-fn usercontent_path_default() -> String {
-    "~/.local/share/gm/usercontent".to_string()
-}
-
-fn logs_path_default() -> String {
-    "~/.local/share/gm/logs".to_string()
 }

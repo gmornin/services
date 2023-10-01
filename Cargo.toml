@@ -30,7 +30,6 @@ actix-files = "0.6"
 sudo = "0.6"
 # goodmorning-bindings = {path = "../rust-bindings", version = "*"}
 goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="6b5dd7f", version = "*"}
-once_cell = "1.18"
 regex = "1.8"
 xdg-mime = "0.3"
 mime = "0.3"
@@ -38,6 +37,8 @@ mime = "0.3"
 # parking_lot = "0.12"
 dirs = "5.0"
 serde_yaml = "0.9"
+serde-inline-default = "0.1.1"
+serde_default = "0.1.0"
 
 # pulldown-cmark = "0.9"
 # markdown = "1.0.0-alpha"

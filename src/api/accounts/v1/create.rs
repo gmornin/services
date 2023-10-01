@@ -1,17 +1,22 @@
 use std::error::Error;
 
-use actix_web::{post, web::Json, HttpResponse};
+use actix_web::{post, web::Json, HttpRequest, HttpResponse};
 use goodmorning_bindings::services::v1::{V1All3, V1Error, V1Response};
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/create")]
-async fn create(post: Json<V1All3>) -> HttpResponse {
-    from_res(create_task(post).await)
+async fn create(post: Json<V1All3>, req: HttpRequest) -> HttpResponse {
+    from_res(create_task(post, req).await)
 }
 
-async fn create_task(post: Json<V1All3>) -> Result<V1Response, Box<dyn Error>> {
-    if !ALLOW_REGISTER.get().unwrap() {
+async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response, Box<dyn Error>> {
+    if !ALLOW_REGISTER.get().unwrap()
+        && !CREATE_WHITELIST
+            .get()
+            .unwrap()
+            .contains(&req.connection_info().peer_addr().unwrap().to_string())
+    {
         return Err(V1Error::FeatureDisabled.into());
     }
 

@@ -6,3 +6,5 @@ mod storage;
 pub use storage::*;
 mod defaults;
 pub use defaults::*;
+mod whitelist;
+pub use whitelist::*;

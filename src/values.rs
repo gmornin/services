@@ -16,50 +16,52 @@ use crate::{
     functions::{get_accounts, get_client, get_counters, get_database, get_triggers, parse_path},
     structs::{
         Account, Counter, CredentialsConfig, DefaultsConfig, ItemVisibility, LimitsConfig,
-        StorageConfig, StorageLimitConfigs, Trigger,
+        StorageConfig, StorageLimitConfigs, Trigger, WhitelistConfig,
     },
     traits::ConfigTrait,
 };
-use once_cell::sync::OnceCell;
 use std::{
     fs::{self, File},
     io::BufReader,
     path::PathBuf,
+    sync::OnceLock,
     time::Duration,
 };
 
-pub static PFP_LIMIT: OnceCell<u64> = OnceCell::new();
-pub static QUEUE_LIMIT: OnceCell<usize> = OnceCell::new();
-pub static MAX_CONCURRENT: OnceCell<usize> = OnceCell::new();
-pub static STORAGE_LIMITS: OnceCell<StorageLimitConfigs> = OnceCell::new();
-pub static EMAIL_VERIFICATION_DURATION: OnceCell<Duration> = OnceCell::new();
-pub static EMAIL_VERIFICATION_COOLDOWN: OnceCell<u64> = OnceCell::new();
-pub static ALLOW_REGISTER: OnceCell<bool> = OnceCell::new();
+pub static PFP_LIMIT: OnceLock<u64> = OnceLock::new();
+pub static QUEUE_LIMIT: OnceLock<usize> = OnceLock::new();
+pub static MAX_CONCURRENT: OnceLock<usize> = OnceLock::new();
+pub static STORAGE_LIMITS: OnceLock<StorageLimitConfigs> = OnceLock::new();
+pub static EMAIL_VERIFICATION_DURATION: OnceLock<Duration> = OnceLock::new();
+pub static EMAIL_VERIFICATION_COOLDOWN: OnceLock<u64> = OnceLock::new();
+pub static ALLOW_REGISTER: OnceLock<bool> = OnceLock::new();
 
-pub static HASH_SALT: OnceCell<String> = OnceCell::new();
-pub static SMTP_USERNAME: OnceCell<String> = OnceCell::new();
-pub static SMTP_PASSWORD: OnceCell<String> = OnceCell::new();
-pub static SMTP_RELAY: OnceCell<String> = OnceCell::new();
-pub static SMTP_FROM: OnceCell<String> = OnceCell::new();
-pub static SMTP_CREDS: OnceCell<Credentials> = OnceCell::new();
-pub static CERT_CHAIN: OnceCell<PathBuf> = OnceCell::new();
-pub static CERT_KEY: OnceCell<PathBuf> = OnceCell::new();
+pub static HASH_SALT: OnceLock<String> = OnceLock::new();
+pub static SMTP_USERNAME: OnceLock<String> = OnceLock::new();
+pub static SMTP_PASSWORD: OnceLock<String> = OnceLock::new();
+pub static SMTP_RELAY: OnceLock<String> = OnceLock::new();
+pub static SMTP_FROM: OnceLock<String> = OnceLock::new();
+pub static SMTP_CREDS: OnceLock<Credentials> = OnceLock::new();
+pub static CERT_CHAIN: OnceLock<PathBuf> = OnceLock::new();
+pub static CERT_KEY: OnceLock<PathBuf> = OnceLock::new();
 
-pub static MONGO_HOST: OnceCell<String> = OnceCell::new();
-pub static USERCONTENT: OnceCell<PathBuf> = OnceCell::new();
-pub static LOGS_PATH: OnceCell<PathBuf> = OnceCell::new();
-pub static SELF_ADDR: OnceCell<String> = OnceCell::new();
+pub static MONGO_HOST: OnceLock<String> = OnceLock::new();
+pub static USERCONTENT: OnceLock<PathBuf> = OnceLock::new();
+pub static LOGS_PATH: OnceLock<PathBuf> = OnceLock::new();
+pub static SELF_ADDR: OnceLock<String> = OnceLock::new();
 
-// pub static PFP_DEFAULT: OnceCell<PathBuf> = OnceCell::new();
-pub static VIS_DEFAULT: OnceCell<ItemVisibility> = OnceCell::new();
-pub static HTTP_PORT: OnceCell<u16> = OnceCell::new();
-pub static HTTPS_PORT: OnceCell<u16> = OnceCell::new();
+// pub static PFP_DEFAULT: OnceLock<PathBuf> = OnceLock::new();
+pub static VIS_DEFAULT: OnceLock<ItemVisibility> = OnceLock::new();
+pub static HTTP_PORT: OnceLock<u16> = OnceLock::new();
+pub static HTTPS_PORT: OnceLock<u16> = OnceLock::new();
 
-pub static DATABASE: OnceCell<Database> = OnceCell::new();
-pub static ACCOUNTS: OnceCell<Collection<Account>> = OnceCell::new();
-pub static TRIGGERS: OnceCell<Collection<Trigger>> = OnceCell::new();
-pub static COUNTERS: OnceCell<Collection<Counter>> = OnceCell::new();
-pub static MIME_DB: OnceCell<SharedMimeInfo> = OnceCell::new();
+pub static CREATE_WHITELIST: OnceLock<Vec<String>> = OnceLock::new();
+
+pub static DATABASE: OnceLock<Database> = OnceLock::new();
+pub static ACCOUNTS: OnceLock<Collection<Account>> = OnceLock::new();
+pub static TRIGGERS: OnceLock<Collection<Trigger>> = OnceLock::new();
+pub static COUNTERS: OnceLock<Collection<Counter>> = OnceLock::new();
+pub static MIME_DB: OnceLock<SharedMimeInfo> = OnceLock::new();
 
 pub async fn valinit() {
     let configs = home_dir().unwrap().join(".config/gm/");
@@ -105,6 +107,10 @@ pub async fn valinit() {
         .set(parse_path(storage_config.usercontent_path))
         .unwrap();
     SELF_ADDR.set(storage_config.self_addr).unwrap();
+
+    let mut whitelist_config = *WhitelistConfig::load().unwrap();
+    whitelist_config.create.sort();
+    CREATE_WHITELIST.set(whitelist_config.create).unwrap();
 
     let mongo_client = get_client().await;
     let defaults_config = *DefaultsConfig::load().unwrap();
@@ -165,8 +171,7 @@ pub async fn init() {
 pub fn logs_init(options: &LogOptions) {
     let mut loggers: Vec<Box<dyn SharedLogger + 'static>> = Vec::new();
     let path = LOGS_PATH.get().unwrap();
-    if options.termlogging && !path.exists() {
-        fs::create_dir_all(path).unwrap();
+    if options.termlogging {
         loggers.push(TermLogger::new(
             options.term_log_level.into(),
             Config::default(),
@@ -176,6 +181,9 @@ pub fn logs_init(options: &LogOptions) {
     }
 
     if options.writelogging {
+        if !path.exists() {
+            fs::create_dir_all(path).unwrap();
+        }
         loggers.push(WriteLogger::new(
             options.write_log_level.into(),
             Config::default(),
