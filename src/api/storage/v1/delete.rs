@@ -44,5 +44,5 @@ async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error
     }
     visibilities.save(path_buf.parent().unwrap()).await?;
 
-    Ok(V1Response::FileItemCreated)
+    Ok(V1Response::FileItemDeleted)
 }
