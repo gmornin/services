@@ -4,6 +4,16 @@ use serde_inline_default::serde_inline_default;
 
 use crate::traits::ConfigTrait;
 
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum FileCheckType {
+    #[serde(rename = "all")]
+    All,
+    #[serde(rename = "whitelist")]
+    Whitelist,
+    #[serde(rename = "none")]
+    None,
+}
+
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultFromSerde)]
 pub struct StorageConfig {
@@ -17,6 +27,8 @@ pub struct StorageConfig {
     pub usercontent_path: String,
     #[serde_inline_default("~/.local/share/gm/logs".to_string())]
     pub logs_path: String,
+    #[serde_inline_default(FileCheckType::Whitelist)]
+    pub file_check: FileCheckType,
 }
 
 impl ConfigTrait for StorageConfig {

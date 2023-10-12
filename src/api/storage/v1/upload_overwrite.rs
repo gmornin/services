@@ -1,6 +1,6 @@
 use actix_multipart::Multipart;
 use actix_web::{web::Path, *};
-use log::*;
+
 use std::{error::Error, path::PathBuf};
 use tokio::{
     fs::{self, OpenOptions},
@@ -63,29 +63,7 @@ async fn upload_overwrite_task(
 
     let data = bytes_from_multipart(payload).await?;
 
-    if !data.is_empty() {
-        let expected = MIME_DB
-            .get()
-            .unwrap()
-            .get_mime_types_from_file_name(path_buf.file_name().unwrap().to_str().unwrap());
-        let expected_collapsed = expected
-            .iter()
-            .map(|mime| mime_collapse(mime.essence_str()))
-            .collect::<Vec<_>>();
-        match MIME_DB.get().unwrap().get_mime_type_for_data(&data) {
-            Some((mime, _))
-                if !expected.is_empty() && !expected_collapsed.contains(&mime.essence_str()) =>
-            {
-                error!("got: {mime} expected: {expected:?}");
-                return Err(V1Error::FileTypeMismatch {
-                    expected: expected[0].to_string(),
-                    got: mime.to_string(),
-                }
-                .into());
-            }
-            _ => {}
-        }
-    }
+    file_check_v1(&data, &path_buf)?;
 
     if fs::try_exists(&path_buf).await? && fs::metadata(&path_buf).await?.is_dir() {
         fs::remove_dir(&path_buf).await?;

@@ -15,12 +15,13 @@ use xdg_mime::SharedMimeInfo;
 use crate::{
     functions::{get_accounts, get_client, get_counters, get_database, get_triggers, parse_path},
     structs::{
-        Account, Counter, CredentialsConfig, DefaultsConfig, ItemVisibility, LimitsConfig,
-        StorageConfig, StorageLimitConfigs, Trigger, WhitelistConfig,
+        Account, Counter, CredentialsConfig, DefaultsConfig, FileCheckType, ItemVisibility,
+        LimitsConfig, StorageConfig, StorageLimitConfigs, Trigger, WhitelistConfig,
     },
     traits::ConfigTrait,
 };
 use std::{
+    collections::HashSet,
     fs::{self, File},
     io::BufReader,
     path::PathBuf,
@@ -49,6 +50,10 @@ pub static MONGO_HOST: OnceLock<String> = OnceLock::new();
 pub static USERCONTENT: OnceLock<PathBuf> = OnceLock::new();
 pub static LOGS_PATH: OnceLock<PathBuf> = OnceLock::new();
 pub static SELF_ADDR: OnceLock<String> = OnceLock::new();
+pub static FILE_CHECK: OnceLock<FileCheckType> = OnceLock::new();
+pub static FILE_CHECK_MIMETYPES: OnceLock<HashSet<String>> = OnceLock::new();
+pub static FILE_CHECK_SUBTYPES: OnceLock<HashSet<String>> = OnceLock::new();
+pub static FILE_CHECK_EXT: OnceLock<HashSet<String>> = OnceLock::new();
 
 // pub static PFP_DEFAULT: OnceLock<PathBuf> = OnceLock::new();
 pub static VIS_DEFAULT: OnceLock<ItemVisibility> = OnceLock::new();
@@ -107,10 +112,22 @@ pub async fn valinit() {
         .set(parse_path(storage_config.usercontent_path))
         .unwrap();
     SELF_ADDR.set(storage_config.self_addr).unwrap();
+    FILE_CHECK.set(storage_config.file_check).unwrap();
 
     let mut whitelist_config = *WhitelistConfig::load().unwrap();
     whitelist_config.create.sort();
     CREATE_WHITELIST.set(whitelist_config.create).unwrap();
+    FILE_CHECK_MIMETYPES
+        .set(HashSet::from_iter(
+            whitelist_config.file_check.mime_fronttype,
+        ))
+        .unwrap();
+    FILE_CHECK_SUBTYPES
+        .set(HashSet::from_iter(whitelist_config.file_check.mime_subtype))
+        .unwrap();
+    FILE_CHECK_EXT
+        .set(HashSet::from_iter(whitelist_config.file_check.file_exts))
+        .unwrap();
 
     let mongo_client = get_client().await;
     let defaults_config = *DefaultsConfig::load().unwrap();

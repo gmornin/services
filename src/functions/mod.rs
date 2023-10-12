@@ -24,3 +24,5 @@ mod mime_collapse;
 pub use mime_collapse::*;
 mod bson_rw;
 pub use bson_rw::*;
+mod file_check;
+pub use file_check::*;
