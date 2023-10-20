@@ -1,3 +1,4 @@
+mod peek;
 mod revoke;
 mod r#use;
 
@@ -7,4 +8,5 @@ pub fn scope() -> Scope {
     Scope::new("/v1")
         .service(r#use::r#use)
         .service(revoke::revoke)
+        .service(peek::peek)
 }

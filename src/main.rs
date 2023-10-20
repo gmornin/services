@@ -1,7 +1,7 @@
 use actix_web::{
     middleware::Logger,
     web::{self, Data},
-    App, HttpServer,
+    App, HttpServer, Scope,
 };
 use goodmorning_services::{structs::Jobs, *};
 
@@ -28,7 +28,9 @@ async fn main() {
         App::new()
             .app_data(jobs.clone())
             .service(api::scope())
+            .service(Scope::new("/static/services").service(r#static))
             .route("/", web::get().to(pong))
+            .service(pages::scope())
             .wrap(Logger::default())
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)

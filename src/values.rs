@@ -50,6 +50,8 @@ pub static MONGO_HOST: OnceLock<String> = OnceLock::new();
 pub static USERCONTENT: OnceLock<PathBuf> = OnceLock::new();
 pub static LOGS_PATH: OnceLock<PathBuf> = OnceLock::new();
 pub static SELF_ADDR: OnceLock<String> = OnceLock::new();
+pub static SERVICES_STATIC: OnceLock<PathBuf> = OnceLock::new();
+
 pub static FILE_CHECK: OnceLock<FileCheckType> = OnceLock::new();
 pub static FILE_CHECK_MIMETYPES: OnceLock<HashSet<String>> = OnceLock::new();
 pub static FILE_CHECK_SUBTYPES: OnceLock<HashSet<String>> = OnceLock::new();
@@ -113,6 +115,7 @@ pub async fn valinit() {
         .unwrap();
     SELF_ADDR.set(storage_config.self_addr).unwrap();
     FILE_CHECK.set(storage_config.file_check).unwrap();
+    SERVICES_STATIC.set(storage_config.static_path).unwrap();
 
     let mut whitelist_config = *WhitelistConfig::load().unwrap();
     whitelist_config.create.sort();

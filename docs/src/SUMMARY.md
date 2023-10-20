@@ -35,6 +35,7 @@
     - [v1](./triggers/v1/index.md)
         - [use](./triggers/v1/use.md)
         - [revoke](./triggers/v1/revoke.md)
+        - [peek](./triggers/v1/peek.md)
 - [Jobs](./jobs/index.md)
     - [v1](./jobs/v1/index.md)
         - [jobs](./jobs/v1/jobs.md)

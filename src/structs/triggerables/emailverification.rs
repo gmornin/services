@@ -1,10 +1,11 @@
 use crate::{
-    structs::Trigger,
-    traits::{CollectionItem, Triggerable},
+    structs::{ServiceTriggerWrapper, Trigger},
+    traits::{CollectionItem, Peekable, Triggerable},
     *,
 };
 use async_trait::async_trait;
 
+use bindings::structs::{ServicesTriggerTypes, ServicesTriggers};
 use goodmorning_bindings::services::v1::V1Error;
 use lettre::{
     message::{header::ContentType, MessageBuilder},
@@ -31,11 +32,10 @@ impl Triggerable for EmailVerification {
             .subject("Verify your GoodMorning account")
             .header(ContentType::TEXT_PLAIN)
             .body(format!(
-                "Verification link: {}\n\nAccount details:\n  Username: {}\n  User ID: {}\n\nThese details should be displayed for you to double check. If your believe this is not your account, you may click the link below to revoke this verification attempt.\n\nRevoke link: {}",
-                Trigger::use_url(id),
+                "Verification link: {}\n\nAccount details:\n  Username: {}\n  User ID: {}",
+                Trigger::url(id),
                 self.username,
                 self.id,
-                Trigger::revoke_url(id)
             ))?;
 
         let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(SMTP_RELAY.get().unwrap())?
@@ -66,5 +66,16 @@ impl Triggerable for EmailVerification {
         account.save_replace(accounts).await?;
 
         Ok(())
+    }
+
+    fn peek(&self, _id: &str, expiry: u64) -> Option<Box<dyn Peekable>> {
+        Some(Box::new(ServiceTriggerWrapper(ServicesTriggers {
+            expiry,
+            value: ServicesTriggerTypes::EmailVerification {
+                email: self.email.clone(),
+                username: self.username.clone(),
+                id: self.id,
+            },
+        })))
     }
 }

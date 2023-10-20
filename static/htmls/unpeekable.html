@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="/static/services/images/favicon-dark.svg" />
+    <link rel="stylesheet" href="/static/services/css/triggernotfound.css" />
+    <script src="/static/services/scripts/trigger.js"></script>
+    <link
+      rel="stylesheet"
+      href="/static/services/css/dark/triggernotfound.css"
+    />
+    <title>Trigger not found</title>
+  </head>
+  <body>
+    <center id="dialog">
+      <img
+        src="/static/services/images/favicon-dark.svg"
+        alt=""
+        width="100"
+        id="icon"
+      />
+      <br />
+      <h1>Mystery button?</h1>
+      What does this button do?
+      <br />
+      Pressing it is the only way to find out.
+      <div id="buts">
+        <button class="greenbut" onclick="trigger()">Run me.</button>
+        <button class="redbut" onclick="revoke()">Revoke me.</button>
+      </div>
+    </center>
+    <center id="output"></center>
+  </body>
+</html>

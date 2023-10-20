@@ -1,0 +1,27 @@
+#dialog {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+html {
+  user-select: none;
+  font-family: "Courier New", monospace;
+}
+
+#buts button {
+  font-size: 0.8em;
+  font-family: "Courier New", monospace;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 0;
+}
+
+#buts {
+  margin: 20px;
+}
+
+button {
+  cursor: pointer;
+}

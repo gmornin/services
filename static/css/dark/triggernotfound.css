@@ -1,0 +1,26 @@
+html {
+  background: #223344;
+  color: white;
+}
+
+.greenbut {
+  background: #009900;
+  border: 1px solid #88ff88;
+}
+
+.greenbut:hover {
+  border: 1px solid #ccffcc;
+}
+
+.redbut {
+  background: #990000;
+  border: 1px solid #ff8888;
+}
+
+.redbut:hover {
+  border: 1px solid #ffcccc;
+}
+
+button {
+  color: white;
+}

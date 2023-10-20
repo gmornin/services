@@ -1,8 +1,9 @@
-use crate::traits::{CollectionItem, Triggerable};
+use crate::traits::{CollectionItem, Peekable, Triggerable};
 use crate::*;
+use async_trait::async_trait;
 use chrono::Utc;
 use goodmorning_bindings::services::v1::V1Error;
-use mongodb::{bson::doc, Database};
+use mongodb::{bson::doc, Collection, Database};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::time::Duration;
@@ -67,23 +68,33 @@ impl Trigger {
         self.expiry < Utc::now().timestamp() as u64
     }
 
-    pub fn use_url(id: &str) -> String {
-        format!(
-            "{}/api/triggers/v1/use/{id}",
-            SELF_ADDR.get().unwrap().as_str()
-        )
+    pub fn url(id: &str) -> String {
+        format!("{}/trigger/{id}", SELF_ADDR.get().unwrap().as_str())
     }
 
-    pub fn revoke_url(id: &str) -> String {
-        format!(
-            "{}/api/triggers/v1/revoke/{id}",
-            SELF_ADDR.get().unwrap().as_str()
-        )
+    pub fn peek(&self) -> Option<Box<dyn Peekable>> {
+        self.action.peek(&self.id, self.expiry)
     }
 }
 
+#[async_trait]
 impl CollectionItem<String> for Trigger {
     fn id(&self) -> String {
         self.id.to_string()
+    }
+
+    async fn find_by_id(
+        id: String,
+        collection: &Collection<Self>,
+    ) -> Result<Option<Self>, mongodb::error::Error> {
+        let trigger = collection.find_one(doc! {"_id": id}, None).await?;
+
+        if let Some(trigger) = &trigger && trigger.is_invalid() {
+            let _ = trigger.revoke(DATABASE.get().unwrap()).await;
+            let _ = trigger.delete(collection).await;
+            return Ok(None);
+        }
+
+        Ok(trigger)
     }
 }
