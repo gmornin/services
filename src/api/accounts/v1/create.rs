@@ -12,10 +12,12 @@ async fn create(post: Json<V1All3>, req: HttpRequest) -> HttpResponse {
 
 async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response, Box<dyn Error>> {
     if !ALLOW_REGISTER.get().unwrap()
-        && !CREATE_WHITELIST
-            .get()
-            .unwrap()
-            .contains(&req.connection_info().peer_addr().unwrap().to_string())
+        && !CREATE_WHITELIST.get().unwrap().contains(
+            &req.connection_info()
+                .realip_remote_addr()
+                .unwrap()
+                .to_string(),
+        )
     {
         return Err(V1Error::FeatureDisabled.into());
     }
@@ -50,5 +52,6 @@ async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response,
     Ok(V1Response::Created {
         id: account.id,
         token: account.token,
+        verify: *VERIFICATION.get().unwrap(),
     })
 }

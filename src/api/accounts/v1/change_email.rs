@@ -2,6 +2,7 @@ use std::error::Error;
 
 use crate::{
     functions::*, structs::*, traits::CollectionItem, ACCOUNTS, EMAIL_VERIFICATION_COOLDOWN,
+    VERIFICATION,
 };
 use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1ChangeEmail, V1Error, V1Response};
@@ -36,10 +37,13 @@ async fn change_email_task(post: Json<V1ChangeEmail>) -> Result<V1Response, Box<
 
     account.verified = false;
     account.email = post.new.to_lowercase();
+
     account.email_verification().await?;
     account.last_verify = now;
 
     account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
-    Ok(V1Response::EmailChanged)
+    Ok(V1Response::EmailChanged {
+        verify: *VERIFICATION.get().unwrap(),
+    })
 }

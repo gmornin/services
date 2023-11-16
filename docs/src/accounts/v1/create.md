@@ -22,7 +22,8 @@ Status code: `201`
 {
   "type": "created",
   "id": i64,
-  "token": String
+  "token": String,
+  "verify": Boolean
 }
 ```
 

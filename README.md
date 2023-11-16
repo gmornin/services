@@ -76,7 +76,6 @@ Once the current running task has been completed, the next oldest task in queue 
 **Requirements**:
 
 - **MongoDB** server running at `localhost:27017` (address configurable in configs).
-- **sudo** which is a hard dependency, as accessing ports such as 80 and 443 requires root privileges. So sudo is always required to keep things consistent.
 - Other **basic dependencies** such as OpenSSL.
 
 When running as a standalone server, it has **no user interface** of any sort. However, you (and anyone) can still interact with it using the API [as documented](https://siriusmart.github.io/gm-services). You may also use the [GM CLI](https://github.com/gmornin/gm-cli) to interact with it with command line.

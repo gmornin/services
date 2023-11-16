@@ -1,7 +1,6 @@
 #![allow(clippy::module_inception)]
 #![feature(let_chains)]
 #![feature(trait_upcasting)]
-#[allow(private_in_public)]
 pub mod api;
 pub mod functions;
 pub mod pages;

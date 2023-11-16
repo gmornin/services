@@ -19,6 +19,8 @@ pub struct LimitsConfig {
     pub jobs: QueueConfigs,
     #[serde_inline_default(true)]
     pub allow_register: bool,
+    #[serde_inline_default(true)]
+    pub verification: bool,
 }
 
 impl ConfigTrait for LimitsConfig {

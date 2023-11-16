@@ -54,7 +54,7 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
             .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
             .await?
         {
-            return Err(V1Error::FileTooLarge.into());
+            return Err(V1Error::StorageFull.into());
         }
         fs::copy(&from_buf, &to_buf).await?;
     } else {
@@ -70,7 +70,7 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
                 )
                 .await?
             {
-                return Err(V1Error::FileTooLarge.into());
+                return Err(V1Error::StorageFull.into());
             }
             copy_folder_owned(&from_buf, &to_buf).await?;
         } else {
@@ -82,7 +82,7 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
                 )
                 .await?
             {
-                return Err(V1Error::FileTooLarge.into());
+                return Err(V1Error::StorageFull.into());
             }
             if fs::try_exists(&to_buf).await? {
                 fs::remove_dir(&to_buf).await?;

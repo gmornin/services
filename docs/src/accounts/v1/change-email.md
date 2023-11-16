@@ -20,7 +20,8 @@ Status code: `200`
 
 ```json
 {
-  "type": "email changed"
+  "type": "email changed",
+  "verify": Boolean
 }
 ```
 

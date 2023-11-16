@@ -89,7 +89,9 @@ impl CollectionItem<String> for Trigger {
     ) -> Result<Option<Self>, mongodb::error::Error> {
         let trigger = collection.find_one(doc! {"_id": id}, None).await?;
 
-        if let Some(trigger) = &trigger && trigger.is_invalid() {
+        if let Some(trigger) = &trigger
+            && trigger.is_invalid()
+        {
             let _ = trigger.revoke(DATABASE.get().unwrap()).await;
             let _ = trigger.delete(collection).await;
             return Ok(None);

@@ -1,8 +1,4 @@
-use actix_web::{
-    middleware::Logger,
-    web::{self, Data},
-    App, HttpServer, Scope,
-};
+use actix_web::{get, middleware::Logger, web::Data, App, HttpServer, Scope};
 use goodmorning_services::{structs::Jobs, *};
 
 #[tokio::main]
@@ -12,13 +8,12 @@ async fn main() {
         loglabel: "services".to_string(),
         termlogging: true,
         writelogging: true,
-        term_log_level: LevelFilterSerde::Error,
+        term_log_level: LevelFilterSerde::Debug,
         write_log_level: LevelFilterSerde::Debug,
     });
-    let config = load_rustls_config(CERT_CHAIN.get().unwrap(), CERT_KEY.get().unwrap());
     let jobs: Data<Jobs> = Data::new(Jobs::default());
 
-    HttpServer::new(move || {
+    let mut server = HttpServer::new(move || {
         // let backend = InMemoryBackend::builder().build();
         // let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
         //     .real_ip_key()
@@ -29,21 +24,32 @@ async fn main() {
             .app_data(jobs.clone())
             .service(api::scope())
             .service(Scope::new("/static/services").service(r#static))
-            .route("/", web::get().to(pong))
+            .service(pong)
             .service(pages::scope())
-            .wrap(Logger::default())
+            .wrap(Logger::new(
+                r#"%{Forwarded}i "%r" %s %b "%{Referer}i" "%{User-Agent}i" %T"#,
+            ))
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)
-    })
-    .bind(("0.0.0.0", *HTTP_PORT.get().unwrap()))
-    .expect("cannot bind to port")
-    .bind_rustls(("0.0.0.0", *HTTPS_PORT.get().unwrap()), config)
-    .unwrap()
-    .run()
-    .await
-    .expect("server down");
+    });
+
+    if *HTTP.get().unwrap() {
+        server = server
+            .bind(("0.0.0.0", *HTTP_PORT.get().unwrap()))
+            .expect("cannot bind to port");
+    }
+
+    if *HTTPS.get().unwrap() {
+        let config = load_rustls_config(CERT_CHAIN.get().unwrap(), CERT_KEY.get().unwrap());
+        server = server
+            .bind_rustls(("0.0.0.0", *HTTPS_PORT.get().unwrap()), config)
+            .unwrap();
+    }
+
+    server.run().await.expect("server down");
 }
 
+#[get("/")]
 async fn pong() -> &'static str {
     "Pong!"
 }

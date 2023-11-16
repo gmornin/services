@@ -32,5 +32,5 @@ Status code: `201`
 - `permission denied`
 - `path occupied` (non overwrite only)
 - `file not found`
-- `file too large`
+- `storage full`
 - `external`

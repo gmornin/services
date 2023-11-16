@@ -55,7 +55,7 @@ async fn upload_task(
         )
         .await?
     {
-        return Err(V1Error::FileTooLarge.into());
+        return Err(V1Error::StorageFull.into());
     }
 
     let data = bytes_from_multipart(payload).await?;

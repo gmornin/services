@@ -2,6 +2,7 @@ use std::error::Error;
 
 use crate::{
     functions::*, structs::*, traits::CollectionItem, ACCOUNTS, EMAIL_VERIFICATION_COOLDOWN,
+    VERIFICATION,
 };
 use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1Response, V1TokenOnly};
@@ -12,6 +13,10 @@ async fn resend_verify(post: Json<V1TokenOnly>) -> HttpResponse {
 }
 
 async fn resend_verify_task(post: Json<V1TokenOnly>) -> Result<V1Response, Box<dyn Error>> {
+    if !VERIFICATION.get().unwrap() {
+        return Err(V1Error::FeatureDisabled.into());
+    }
+
     let mut account = Account::v1_get_by_token(&post.token).await?;
 
     if account.verified {

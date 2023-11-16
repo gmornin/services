@@ -57,7 +57,7 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
             .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
             .await?
         {
-            return Err(V1Error::FileTooLarge.into());
+            return Err(V1Error::StorageFull.into());
         }
         fs::copy(&from_buf, &to_buf).await?;
     } else if account.id == post.from_userid {
@@ -69,7 +69,7 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
             )
             .await?
         {
-            return Err(V1Error::FileTooLarge.into());
+            return Err(V1Error::StorageFull.into());
         }
         copy_folder_owned(&from_buf, &to_buf).await?;
     } else {
@@ -81,7 +81,7 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
             )
             .await?
         {
-            return Err(V1Error::FileTooLarge.into());
+            return Err(V1Error::StorageFull.into());
         }
         copy_folder_owned(&from_buf, &to_buf).await?;
     }

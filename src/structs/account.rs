@@ -8,6 +8,7 @@ use tokio::io;
 
 use crate::{
     functions::*, structs::*, traits::*, ACCOUNTS, DATABASE, EMAIL_VERIFICATION_DURATION, TRIGGERS,
+    VERIFICATION,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -73,6 +74,10 @@ impl Account {
 
     /// Creates an `EmailVerification` instance
     pub async fn email_verification(&self) -> Result<(), Box<dyn Error>> {
+        if !VERIFICATION.get().unwrap() {
+            return Ok(());
+        }
+
         let trigger_item = EmailVerification {
             username: self.username.clone(),
             email: self.email.clone(),
@@ -168,7 +173,7 @@ impl Account {
     }
 
     pub fn v1_restrict_verified(self) -> Result<Self, V1Error> {
-        if !self.verified {
+        if !self.verified && *VERIFICATION.get().unwrap() {
             return Err(V1Error::NotVerified);
         }
 

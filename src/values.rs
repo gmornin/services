@@ -36,6 +36,7 @@ pub static STORAGE_LIMITS: OnceLock<StorageLimitConfigs> = OnceLock::new();
 pub static EMAIL_VERIFICATION_DURATION: OnceLock<Duration> = OnceLock::new();
 pub static EMAIL_VERIFICATION_COOLDOWN: OnceLock<u64> = OnceLock::new();
 pub static ALLOW_REGISTER: OnceLock<bool> = OnceLock::new();
+pub static VERIFICATION: OnceLock<bool> = OnceLock::new();
 
 pub static HASH_SALT: OnceLock<String> = OnceLock::new();
 pub static SMTP_USERNAME: OnceLock<String> = OnceLock::new();
@@ -61,6 +62,8 @@ pub static FILE_CHECK_EXT: OnceLock<HashSet<String>> = OnceLock::new();
 pub static VIS_DEFAULT: OnceLock<ItemVisibility> = OnceLock::new();
 pub static HTTP_PORT: OnceLock<u16> = OnceLock::new();
 pub static HTTPS_PORT: OnceLock<u16> = OnceLock::new();
+pub static HTTP: OnceLock<bool> = OnceLock::new();
+pub static HTTPS: OnceLock<bool> = OnceLock::new();
 
 pub static CREATE_WHITELIST: OnceLock<Vec<String>> = OnceLock::new();
 
@@ -91,6 +94,7 @@ pub async fn valinit() {
         .set(limit_configs.verification_cooldown)
         .unwrap();
     ALLOW_REGISTER.set(limit_configs.allow_register).unwrap();
+    VERIFICATION.set(limit_configs.verification).unwrap();
 
     let cert_config = *CredentialsConfig::load().unwrap();
     HASH_SALT.set(cert_config.hash_salt).unwrap();
@@ -140,6 +144,8 @@ pub async fn valinit() {
     VIS_DEFAULT.set(defaults_config.default_visibility).unwrap();
     HTTP_PORT.set(defaults_config.http_port).unwrap();
     HTTPS_PORT.set(defaults_config.https_port).unwrap();
+    HTTP.set(defaults_config.http).unwrap();
+    HTTPS.set(defaults_config.https).unwrap();
 
     DATABASE
         .set(get_database(&mongo_client, &storage_config.db_name))
@@ -183,8 +189,6 @@ pub struct LogOptions {
 }
 
 pub async fn init() {
-    sudo::escalate_if_needed().unwrap();
-
     valinit().await;
 }
 

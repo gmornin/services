@@ -55,7 +55,7 @@ async fn upload_createdirs_task(
         )
         .await?
     {
-        return Err(V1Error::FileTooLarge.into());
+        return Err(V1Error::StorageFull.into());
     }
 
     let data = bytes_from_multipart(payload).await?;
@@ -125,7 +125,7 @@ async fn upload_createdirs_overwrite_task(
         )
         .await?
     {
-        return Err(V1Error::FileTooLarge.into());
+        return Err(V1Error::StorageFull.into());
     }
 
     let data = bytes_from_multipart(payload).await?;

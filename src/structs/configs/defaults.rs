@@ -15,6 +15,12 @@ pub struct DefaultsConfig {
     pub http_port: u16,
     #[serde_inline_default(443)]
     pub https_port: u16,
+    #[serde_inline_default(true)]
+    pub http: bool,
+    #[serde_inline_default(false)]
+    pub https: bool,
+    #[serde_inline_default(true)]
+    pub forwarded: bool,
 }
 
 impl ConfigTrait for DefaultsConfig {
