@@ -26,9 +26,11 @@ async fn main() {
             .service(Scope::new("/static/services").service(r#static))
             .service(pong)
             .service(pages::scope())
-            .wrap(Logger::new(
-                r#"%{Forwarded}i "%r" %s %b "%{Referer}i" "%{User-Agent}i" %T"#,
-            ))
+            .wrap(if *FORWARDED.get().unwrap() {
+                Logger::new(r#"%{Forwarded}i "%r" %s %b "%{Referer}i" "%{User-Agent}i" %T"#)
+            } else {
+                Logger::default()
+            })
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)
     });

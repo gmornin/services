@@ -64,6 +64,7 @@ pub static HTTP_PORT: OnceLock<u16> = OnceLock::new();
 pub static HTTPS_PORT: OnceLock<u16> = OnceLock::new();
 pub static HTTP: OnceLock<bool> = OnceLock::new();
 pub static HTTPS: OnceLock<bool> = OnceLock::new();
+pub static FORWARDED: OnceLock<bool> = OnceLock::new();
 
 pub static CREATE_WHITELIST: OnceLock<Vec<String>> = OnceLock::new();
 
@@ -146,6 +147,7 @@ pub async fn valinit() {
     HTTPS_PORT.set(defaults_config.https_port).unwrap();
     HTTP.set(defaults_config.http).unwrap();
     HTTPS.set(defaults_config.https).unwrap();
+    FORWARDED.set(defaults_config.forwarded).unwrap();
 
     DATABASE
         .set(get_database(&mongo_client, &storage_config.db_name))
