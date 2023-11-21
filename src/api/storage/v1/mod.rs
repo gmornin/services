@@ -3,10 +3,12 @@ use actix_web::Scope;
 mod copy;
 mod copy_overwrite;
 mod delete;
+mod delete_multiple;
 mod diritems;
 mod exists;
 mod file;
 mod mkdir;
+mod mkdir_multiple;
 mod r#move;
 mod move_overwrite;
 mod remove_visibility;
@@ -24,9 +26,11 @@ pub fn scope() -> Scope {
         .service(upload_createdirs::upload_createdirs)
         .service(upload_createdirs::upload_createdirs_overwrite)
         .service(mkdir::mkdir)
+        .service(mkdir_multiple::mkdir_multiple)
         .service(set_visibility::set_visibility)
         .service(remove_visibility::remove_visibility)
         .service(delete::delete)
+        .service(delete_multiple::delete_multiple)
         .service(touch::touch)
         .service(copy::copy)
         .service(copy_overwrite::copy_overwrite)
