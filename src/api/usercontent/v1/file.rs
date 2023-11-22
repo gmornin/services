@@ -2,14 +2,11 @@ use std::error::Error;
 
 use actix_files::NamedFile;
 use actix_web::{get, web, HttpRequest, HttpResponse};
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1Response};
 use tokio::fs;
 
 use crate::{
-    functions::{get_user_dir, has_dotdot, is_bson},
+    functions::{from_res, get_user_dir, has_dotdot, is_bson},
     structs::{ItemVisibility, Visibilities},
 };
 
@@ -17,7 +14,10 @@ use crate::{
 pub async fn by_id(path: web::Path<(i64, String)>, req: HttpRequest) -> HttpResponse {
     match fetch(path, &req).await {
         Ok(ok) => ok,
-        Err(e) => HttpResponse::Ok().json(V1Response::from_res(Err(e))),
+        Err(e) => {
+            let res: Result<V1Response, Box<dyn Error>> = Err(e);
+            from_res(res)
+        }
     }
 }
 

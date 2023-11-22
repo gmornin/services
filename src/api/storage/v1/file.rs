@@ -10,10 +10,7 @@ use tokio::fs::{self, try_exists};
 
 use crate::{functions::*, structs::*};
 
-use goodmorning_bindings::{
-    services::v1::{V1Error, V1Response},
-    traits::ResTrait,
-};
+use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 #[derive(Deserialize)]
 struct DisplayType {
@@ -29,7 +26,10 @@ async fn file(
 ) -> HttpResponse {
     match file_task(path, &req, query).await {
         Ok(ok) => ok,
-        Err(e) => HttpResponse::NotFound().json(V1Response::from_res(Err(e))),
+        Err(e) => {
+            let res: Result<V1Response, Box<dyn Error>> = Err(e);
+            from_res(res)
+        }
     }
 }
 
