@@ -26,10 +26,7 @@ async fn file(
 ) -> HttpResponse {
     match file_task(path, &req, query).await {
         Ok(ok) => ok,
-        Err(e) => {
-            let res: Result<V1Response, Box<dyn Error>> = Err(e);
-            from_res(res)
-        }
+        Err(e) => from_res::<V1Response>(Err(e)),
     }
 }
 
