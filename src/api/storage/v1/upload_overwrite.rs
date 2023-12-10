@@ -9,7 +9,7 @@ use tokio::{
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/upload-overwrite/{token}/{path:.*}")]
 pub async fn upload_overwrite(
@@ -26,7 +26,7 @@ async fn upload_overwrite_task(
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let account = Account::v1_get_by_token(&token)
+    let mut account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
 
@@ -38,23 +38,28 @@ async fn upload_overwrite_task(
 
     let path_buf = get_user_dir(account.id, None).join(user_path);
 
+    let size = req
+        .headers()
+        .get("content-length")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
+    let to_metedata = if fs::try_exists(&path_buf).await? {
+        Some(fs::metadata(&path_buf).await?)
+    } else {
+        None
+    };
+
+    let to_size = match &to_metedata {
+        Some(meta) if meta.is_file() => meta.len(),
+        Some(_) => dir_size(&path_buf).await?,
+        None => 0,
+    };
+
     if account
-        .exceeds_limit(
-            STORAGE_LIMITS.get().unwrap(),
-            Some(
-                req.headers()
-                    .get("content-length")
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .parse::<u64>()
-                    .unwrap(),
-            ),
-            Some(match fs::metadata(&path_buf).await {
-                Ok(me) => me.len(),
-                Err(_) => 0,
-            }),
-        )
+        .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(size), Some(to_size))
         .await
         .unwrap()
     {
@@ -65,9 +70,19 @@ async fn upload_overwrite_task(
 
     file_check_v1(&data, &path_buf)?;
 
-    if fs::try_exists(&path_buf).await? && fs::metadata(&path_buf).await?.is_dir() {
-        fs::remove_dir(&path_buf).await?;
+    if let Some(meta) = to_metedata {
+        if meta.is_dir() {
+            fs::remove_dir_all(&path_buf).await?;
+        } else {
+            fs::remove_file(&path_buf).await?;
+        }
     }
+
+    let stored = account.stored.as_mut().unwrap();
+
+    stored.value += size;
+    stored.value = stored.value.saturating_sub(to_size);
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     let mut file = OpenOptions::new()
         .create(true)

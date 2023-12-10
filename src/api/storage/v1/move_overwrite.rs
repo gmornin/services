@@ -4,7 +4,7 @@ use tokio::fs;
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response, V1SelfFromTo};
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, traits::CollectionItem, ACCOUNTS};
 
 #[post("/move-overwrite")]
 pub async fn r#move(post: Json<V1SelfFromTo>) -> HttpResponse {
@@ -12,7 +12,7 @@ pub async fn r#move(post: Json<V1SelfFromTo>) -> HttpResponse {
 }
 
 async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token)
+    let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
 
@@ -36,6 +36,33 @@ async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box
 
     if from_buf.extension() != to_buf.extension() {
         return Err(V1Error::ExtensionMismatch.into());
+    }
+
+    let to_metedata = if fs::try_exists(&to_buf).await? {
+        Some(fs::metadata(&to_buf).await?)
+    } else {
+        None
+    };
+
+    let to_size = match &to_metedata {
+        Some(meta) if meta.is_file() => meta.len(),
+        Some(_) => dir_size(&to_buf).await?,
+        None => 0,
+    };
+
+    if let Some(meta) = to_metedata {
+        if meta.is_dir() {
+            fs::remove_dir_all(&to_buf).await?;
+        } else {
+            fs::remove_file(&to_buf).await?;
+        }
+
+        if to_size != 0 {
+            if let Some(stored) = account.stored.as_mut() {
+                stored.value = stored.value.saturating_sub(to_size);
+                account.save_replace(ACCOUNTS.get().unwrap()).await?;
+            }
+        }
     }
 
     fs::rename(&from_buf, &to_buf).await?;

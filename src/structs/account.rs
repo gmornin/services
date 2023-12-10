@@ -4,12 +4,40 @@ use std::error::Error;
 use chrono::Utc;
 use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
-use tokio::io;
 
 use crate::{
     functions::*, structs::*, traits::*, ACCOUNTS, DATABASE, EMAIL_VERIFICATION_DURATION, TRIGGERS,
     VERIFICATION,
 };
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct StorageSize {
+    pub last_checked: u64,
+    pub value: u64,
+}
+
+impl StorageSize {
+    pub fn new(value: u64) -> Self {
+        Self {
+            last_checked: Utc::now().timestamp() as u64,
+            value,
+        }
+    }
+
+    pub fn set(&mut self, value: u64) {
+        self.value = value;
+        self.last_checked = Utc::now().timestamp() as u64;
+    }
+
+    pub fn outdated(&self) -> bool {
+        self.last_checked + 43200 < Utc::now().timestamp() as u64
+    }
+
+    pub async fn update(&mut self, id: i64) -> Result<(), Box<dyn Error>> {
+        self.set(dir_size(&get_user_dir(id, None)).await?);
+        Ok(())
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Account {
@@ -34,9 +62,47 @@ pub struct Account {
 
     #[serde(default)]
     pub counters: AccountCounters,
+
+    pub stored: Option<StorageSize>,
 }
 
 impl Account {
+    pub async fn get_stored(&mut self) -> Result<u64, Box<dyn Error>> {
+        let updated = match &mut self.stored {
+            Some(stored) if stored.outdated() => {
+                stored.update(self.id).await?;
+                true
+            }
+            Some(_) => false,
+            None => {
+                self.stored = Some(StorageSize::new(
+                    dir_size(&get_user_dir(self.id, None)).await?,
+                ));
+                true
+            }
+        };
+
+        if updated {
+            self.save_replace(ACCOUNTS.get().unwrap()).await?;
+        }
+
+        Ok(self.stored.as_ref().unwrap().value)
+    }
+
+    pub async fn get_stored_nosave(&mut self) -> Result<u64, Box<dyn Error>> {
+        match &mut self.stored {
+            Some(stored) if stored.outdated() => stored.update(self.id).await?,
+            Some(_) => {}
+            None => {
+                self.stored = Some(StorageSize::new(
+                    dir_size(&get_user_dir(self.id, None)).await?,
+                ))
+            }
+        }
+
+        Ok(self.stored.as_ref().unwrap().value)
+    }
+
     /// Create new instance of self with default values, including a unique ID
     pub async fn new(
         username: String,
@@ -64,6 +130,8 @@ impl Account {
             services: Vec::new(),
 
             counters: AccountCounters::default(),
+
+            stored: Some(StorageSize::new(0)),
         })
     }
 
@@ -203,17 +271,31 @@ impl Account {
     }
 
     pub async fn exceeds_limit(
-        &self,
+        &mut self,
         limits: &StorageLimitConfigs,
         extra: Option<u64>,
         remove: Option<u64>,
-    ) -> io::Result<bool> {
+    ) -> Result<bool, Box<dyn Error>> {
         if extra > remove {
             Ok(
-                dir_size(&get_user_dir(self.id, None)).await? + extra.unwrap_or_default()
-                    - remove.unwrap_or_default()
+                self.get_stored().await? + extra.unwrap_or_default() - remove.unwrap_or_default()
                     > self.storage_limits(limits),
             )
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub async fn exceeds_limit_nosave(
+        &mut self,
+        limits: &StorageLimitConfigs,
+        extra: Option<u64>,
+        remove: Option<u64>,
+    ) -> Result<bool, Box<dyn Error>> {
+        if extra > remove {
+            Ok(self.get_stored_nosave().await? + extra.unwrap_or_default()
+                - remove.unwrap_or_default()
+                > self.storage_limits(limits))
         } else {
             Ok(false)
         }

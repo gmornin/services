@@ -2,7 +2,7 @@ use actix_web::{web::Json, *};
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, traits::CollectionItem, ACCOUNTS};
 
 use goodmorning_bindings::services::v1::{V1Error, V1PathOnly, V1Response};
 
@@ -12,7 +12,7 @@ pub async fn delete(post: Json<V1PathOnly>) -> HttpResponse {
 }
 
 async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token)
+    let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
 
@@ -26,10 +26,24 @@ async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error
         return Err(V1Error::FileNotFound.into());
     }
 
-    if fs::metadata(&path_buf).await?.is_file() {
+    let meta = fs::metadata(&path_buf).await?;
+    if meta.is_file() {
         fs::remove_file(&path_buf).await?;
+        if let Some(stored) = account.stored.as_mut()
+            && meta.len() != 0
+        {
+            stored.value = stored.value.saturating_sub(meta.len());
+            account.save_replace(ACCOUNTS.get().unwrap()).await?;
+        }
     } else {
+        let size = dir_size(&path_buf).await?;
         fs::remove_dir_all(&path_buf).await?;
+        if let Some(stored) = account.stored.as_mut()
+            && size != 0
+        {
+            stored.value = stored.value.saturating_sub(size);
+            account.save_replace(ACCOUNTS.get().unwrap()).await?;
+        }
     }
 
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;

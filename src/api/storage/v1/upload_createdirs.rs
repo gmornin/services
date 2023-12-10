@@ -8,7 +8,7 @@ use tokio::{
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/upload-createdirs/{token}/{path:.*}")]
 pub async fn upload_createdirs(
@@ -25,7 +25,7 @@ async fn upload_createdirs_task(
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let account = Account::v1_get_by_token(&token)
+    let mut account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
 
@@ -41,18 +41,15 @@ async fn upload_createdirs_task(
         return Err(V1Error::PathOccupied.into());
     }
 
+    let size = req
+        .headers()
+        .get("content-length")
+        .unwrap()
+        .to_str()?
+        .parse::<u64>()?;
+
     if account
-        .exceeds_limit(
-            STORAGE_LIMITS.get().unwrap(),
-            Some(
-                req.headers()
-                    .get("content-length")
-                    .unwrap()
-                    .to_str()?
-                    .parse::<u64>()?,
-            ),
-            None,
-        )
+        .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(size), None)
         .await?
     {
         return Err(V1Error::StorageFull.into());
@@ -61,6 +58,9 @@ async fn upload_createdirs_task(
     let data = bytes_from_multipart(payload).await?;
 
     file_check_v1(&data, &path_buf)?;
+
+    account.stored.as_mut().unwrap().value += size;
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     let parent = path_buf.parent().unwrap();
 
@@ -95,7 +95,7 @@ async fn upload_createdirs_overwrite_task(
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let account = Account::v1_get_by_token(&token)
+    let mut account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
 
@@ -111,18 +111,27 @@ async fn upload_createdirs_overwrite_task(
         return Err(V1Error::PathOccupied.into());
     }
 
+    let size = req
+        .headers()
+        .get("content-length")
+        .unwrap()
+        .to_str()?
+        .parse::<u64>()?;
+
+    let to_metedata = if fs::try_exists(&path_buf).await? {
+        Some(fs::metadata(&path_buf).await?)
+    } else {
+        None
+    };
+
+    let to_size = match &to_metedata {
+        Some(meta) if meta.is_file() => meta.len(),
+        Some(_) => dir_size(&path_buf).await?,
+        None => 0,
+    };
+
     if account
-        .exceeds_limit(
-            STORAGE_LIMITS.get().unwrap(),
-            Some(
-                req.headers()
-                    .get("content-length")
-                    .unwrap()
-                    .to_str()?
-                    .parse::<u64>()?,
-            ),
-            None,
-        )
+        .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(size), Some(to_size))
         .await?
     {
         return Err(V1Error::StorageFull.into());
@@ -134,10 +143,22 @@ async fn upload_createdirs_overwrite_task(
 
     let parent = path_buf.parent().unwrap();
 
+    if let Some(meta) = to_metedata {
+        if meta.is_dir() {
+            fs::remove_dir_all(&path_buf).await?;
+        } else {
+            fs::remove_file(&path_buf).await?;
+        }
+    }
+
+    let stored = account.stored.as_mut().unwrap();
+
+    stored.value += size;
+    stored.value = stored.value.saturating_sub(to_size);
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
+
     if !fs::try_exists(parent).await? {
         fs::create_dir_all(parent).await?;
-    } else if fs::try_exists(&path_buf).await? && fs::metadata(&path_buf).await?.is_dir() {
-        fs::remove_dir(&path_buf).await?;
     }
 
     let mut file = OpenOptions::new()

@@ -6,7 +6,7 @@ use tokio::{
     io::AsyncWriteExt,
 };
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
@@ -25,7 +25,7 @@ async fn upload_task(
     req: HttpRequest,
 ) -> Result<V1Response, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let account = Account::v1_get_by_token(&token)
+    let mut account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
 
@@ -41,22 +41,22 @@ async fn upload_task(
         return Err(V1Error::PathOccupied.into());
     }
 
+    let size = req
+        .headers()
+        .get("content-length")
+        .unwrap()
+        .to_str()?
+        .parse::<u64>()?;
+
     if account
-        .exceeds_limit(
-            STORAGE_LIMITS.get().unwrap(),
-            Some(
-                req.headers()
-                    .get("content-length")
-                    .unwrap()
-                    .to_str()?
-                    .parse::<u64>()?,
-            ),
-            None,
-        )
+        .exceeds_limit_nosave(STORAGE_LIMITS.get().unwrap(), Some(size), None)
         .await?
     {
         return Err(V1Error::StorageFull.into());
     }
+
+    account.stored.as_mut().unwrap().value += size;
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     let data = bytes_from_multipart(payload).await?;
 

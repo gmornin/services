@@ -4,7 +4,7 @@ use tokio::fs;
 
 use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/copy-overwrite")]
 pub async fn copy_overwrite(post: Json<V1FromTo>) -> HttpResponse {
@@ -12,7 +12,7 @@ pub async fn copy_overwrite(post: Json<V1FromTo>) -> HttpResponse {
 }
 
 async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token)
+    let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
 
@@ -45,50 +45,87 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     }
 
     let metadata = fs::metadata(&from_buf).await?;
+    let to_metedata = if fs::try_exists(&to_buf).await? {
+        Some(fs::metadata(&to_buf).await?)
+    } else {
+        None
+    };
+
+    let to_size = match &to_metedata {
+        Some(meta) if meta.is_file() => meta.len(),
+        Some(_) => dir_size(&to_buf).await?,
+        None => 0,
+    };
 
     if metadata.is_file() {
         if from_buf.extension() != to_buf.extension() {
             return Err(V1Error::ExtensionMismatch.into());
         }
+
         if account
-            .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
+            .exceeds_limit(
+                STORAGE_LIMITS.get().unwrap(),
+                Some(metadata.len()),
+                Some(to_size),
+            )
             .await?
         {
             return Err(V1Error::StorageFull.into());
         }
-        fs::copy(&from_buf, &to_buf).await?;
-    } else {
-        if fs::try_exists(&to_buf).await? {
+
+        if to_metedata.is_some_and(|item| item.is_dir()) {
             fs::remove_dir_all(&to_buf).await?;
         }
-        if account.id == post.from_userid {
-            if account
-                .exceeds_limit(
-                    STORAGE_LIMITS.get().unwrap(),
-                    Some(dir_size(&from_buf).await?),
-                    None,
-                )
-                .await?
-            {
-                return Err(V1Error::StorageFull.into());
-            }
-            copy_folder_owned(&from_buf, &to_buf).await?;
-        } else {
-            if account
-                .exceeds_limit(
-                    STORAGE_LIMITS.get().unwrap(),
-                    Some(dir_size_unowned(&from_buf, vis.visibility).await?),
-                    None,
-                )
-                .await?
-            {
-                return Err(V1Error::StorageFull.into());
-            }
-            if fs::try_exists(&to_buf).await? {
-                fs::remove_dir(&to_buf).await?;
-            }
-            copy_folder_unowned(&from_buf, &to_buf, vis.visibility).await?;
+        fs::copy(&from_buf, &to_buf).await?;
+
+        let stored = account.stored.as_mut().unwrap();
+        stored.value += metadata.len();
+        stored.value = stored.value.saturating_sub(to_size);
+    } else if account.id == post.from_userid {
+        let from_size = dir_size(&from_buf).await?;
+        if account
+            .exceeds_limit(
+                STORAGE_LIMITS.get().unwrap(),
+                Some(from_size),
+                Some(to_size),
+            )
+            .await?
+        {
+            return Err(V1Error::StorageFull.into());
         }
+        if let Some(meta) = to_metedata {
+            if meta.is_dir() {
+                fs::remove_dir_all(&to_buf).await?;
+            } else {
+                fs::remove_file(&to_buf).await?;
+            }
+        }
+        copy_folder_owned(&from_buf, &to_buf).await?;
+        let stored = account.stored.as_mut().unwrap();
+        stored.value += from_size;
+        stored.value = stored.value.saturating_sub(to_size);
+    } else {
+        let from_size = dir_size_unowned(&from_buf, vis.visibility).await?;
+        if account
+            .exceeds_limit(
+                STORAGE_LIMITS.get().unwrap(),
+                Some(from_size),
+                Some(to_size),
+            )
+            .await?
+        {
+            return Err(V1Error::StorageFull.into());
+        }
+        if let Some(meta) = to_metedata {
+            if meta.is_dir() {
+                fs::remove_dir_all(&to_buf).await?;
+            } else {
+                fs::remove_file(&to_buf).await?;
+            }
+        }
+        let stored = account.stored.as_mut().unwrap();
+        stored.value += from_size;
+        stored.value = stored.value.saturating_sub(to_size);
     }
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;
@@ -115,6 +152,8 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         new_visibilities.0.insert(file_name, from_visibility);
         new_visibilities.save(to_buf.parent().unwrap()).await?;
     }
+
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     Ok(V1Response::Copied)
 }

@@ -3,7 +3,7 @@ use goodmorning_bindings::services::v1::{V1Error, V1FromTo, V1Response};
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
-use crate::{functions::*, structs::*, *};
+use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/copy")]
 pub async fn copy(post: Json<V1FromTo>) -> HttpResponse {
@@ -11,7 +11,7 @@ pub async fn copy(post: Json<V1FromTo>) -> HttpResponse {
 }
 
 async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token)
+    let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
 
@@ -54,36 +54,34 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         }
 
         if account
-            .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
+            .exceeds_limit_nosave(STORAGE_LIMITS.get().unwrap(), Some(metadata.len()), None)
             .await?
         {
+            account.save_replace(ACCOUNTS.get().unwrap()).await?;
             return Err(V1Error::StorageFull.into());
         }
         fs::copy(&from_buf, &to_buf).await?;
+        account.stored.as_mut().unwrap().value += metadata.len();
     } else if account.id == post.from_userid {
+        let size = dir_size(&from_buf).await?;
         if account
-            .exceeds_limit(
-                STORAGE_LIMITS.get().unwrap(),
-                Some(dir_size(&from_buf).await?),
-                None,
-            )
+            .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(size), None)
             .await?
         {
             return Err(V1Error::StorageFull.into());
         }
         copy_folder_owned(&from_buf, &to_buf).await?;
+        account.stored.as_mut().unwrap().value += size;
     } else {
+        let size = dir_size_unowned(&from_buf, vis.unwrap()).await?;
         if account
-            .exceeds_limit(
-                STORAGE_LIMITS.get().unwrap(),
-                Some(dir_size_unowned(&from_buf, vis.unwrap()).await?),
-                None,
-            )
+            .exceeds_limit(STORAGE_LIMITS.get().unwrap(), Some(size), None)
             .await?
         {
             return Err(V1Error::StorageFull.into());
         }
-        copy_folder_owned(&from_buf, &to_buf).await?;
+        copy_folder_unowned(&from_buf, &to_buf, vis.unwrap()).await?;
+        account.stored.as_mut().unwrap().value += size;
     }
 
     let mut from_visibilities = Visibilities::read_dir(from_buf.parent().unwrap()).await?;
@@ -110,6 +108,8 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         new_visibilities.0.insert(file_name, from_visibility);
         new_visibilities.save(to_buf.parent().unwrap()).await?;
     }
+
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     Ok(V1Response::Copied)
 }

@@ -2,7 +2,7 @@ use actix_web::{web::Json, *};
 use std::{error::Error, path::PathBuf};
 use tokio::fs;
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, traits::CollectionItem, ACCOUNTS};
 
 use goodmorning_bindings::{
     services::v1::{V1Error, V1MulpiplePaths, V1Response},
@@ -15,20 +15,24 @@ pub async fn delete_multiple(post: Json<V1MulpiplePaths>) -> HttpResponse {
 }
 
 async fn delete_multiple_task(post: Json<V1MulpiplePaths>) -> Result<V1Response, Box<dyn Error>> {
-    let account = Account::v1_get_by_token(&post.token)
+    let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
 
     let mut res = Vec::with_capacity(post.paths.len());
 
     for path in post.paths.iter() {
-        res.push(V1Response::from_res(delete_single(path, &account).await))
+        res.push(V1Response::from_res(
+            delete_single(path, &mut account).await,
+        ))
     }
+
+    account.save_replace(ACCOUNTS.get().unwrap()).await?;
 
     Ok(V1Response::Multi { res })
 }
 
-async fn delete_single(path: &str, account: &Account) -> Result<V1Response, Box<dyn Error>> {
+async fn delete_single(path: &str, account: &mut Account) -> Result<V1Response, Box<dyn Error>> {
     let user_path = PathBuf::from(path.trim_start_matches('/'));
     if !editable(&user_path, &account.services) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
@@ -39,10 +43,18 @@ async fn delete_single(path: &str, account: &Account) -> Result<V1Response, Box<
         return Err(V1Error::FileNotFound.into());
     }
 
-    if fs::metadata(&path_buf).await?.is_file() {
+    let meta = fs::metadata(&path_buf).await?;
+    if meta.is_file() {
         fs::remove_file(&path_buf).await?;
+        if let Some(stored) = account.stored.as_mut() {
+            stored.value = stored.value.saturating_sub(meta.len());
+        }
     } else {
+        let size = dir_size(&path_buf).await?;
         fs::remove_dir_all(&path_buf).await?;
+        if let Some(stored) = account.stored.as_mut() {
+            stored.value = stored.value.saturating_sub(size);
+        }
     }
 
     let mut visibilities = Visibilities::read_dir(path_buf.parent().unwrap()).await?;
