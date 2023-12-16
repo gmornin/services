@@ -29,14 +29,17 @@ async fn change_email_task(post: Json<V1ChangeEmail>) -> Result<V1Response, Box<
         .into());
     }
 
-    if account.email == post.new.to_lowercase()
-        || Account::find_by_email(&post.new).await?.is_some()
-    {
+    let new = post.new.to_lowercase();
+    if account.email == new {
+        return Ok(V1Response::NothingChanged);
+    }
+
+    if Account::find_by_email(&post.new).await?.is_some() {
         return Err(V1Error::EmailTaken.into());
     }
 
     account.verified = false;
-    account.email = post.new.to_lowercase();
+    account.email = new;
 
     account.email_verification().await?;
     account.last_verify = now;

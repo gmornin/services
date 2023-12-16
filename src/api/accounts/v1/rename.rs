@@ -21,6 +21,12 @@ async fn rename_task(post: Json<V1RenameAccount>) -> Result<V1Response, Box<dyn 
         None => return Err(V1Error::InvalidToken.into()),
     };
 
+    if post.new.eq_ignore_ascii_case(&account.username) {
+        account.username = post.new;
+        account.save_replace(ACCOUNTS.get().unwrap()).await?;
+        return Ok(V1Response::Renamed);
+    }
+
     if Account::find_by_username(post.new.clone()).await?.is_some() {
         return Err(V1Error::UsernameTaken.into());
     }
