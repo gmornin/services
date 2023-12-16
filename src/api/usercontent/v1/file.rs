@@ -1,8 +1,14 @@
 use std::error::Error;
 
 use actix_files::NamedFile;
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{
+    get,
+    http::{self, header::ContentDisposition},
+    web::{self, Query},
+    HttpRequest, HttpResponse,
+};
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
+use serde::Deserialize;
 use tokio::fs;
 
 use crate::{
@@ -10,17 +16,28 @@ use crate::{
     structs::{ItemVisibility, Visibilities},
 };
 
+#[derive(Deserialize)]
+struct DisplayType {
+    #[serde(rename = "display")]
+    pub display: Option<String>,
+}
+
 #[get("file/id/{id}/{path:.*}")]
-pub async fn by_id(path: web::Path<(i64, String)>, req: HttpRequest) -> HttpResponse {
-    match fetch(path, &req).await {
+pub async fn by_id(
+    path: web::Path<(i64, String)>,
+    req: HttpRequest,
+    query: Query<DisplayType>,
+) -> HttpResponse {
+    match fetch(path, &req, query).await {
         Ok(ok) => ok,
         Err(e) => from_res::<V1Response>(Err(e)),
     }
 }
 
-pub async fn fetch(
+async fn fetch(
     path: web::Path<(i64, String)>,
     req: &HttpRequest,
+    query: Query<DisplayType>,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let (id, path) = path.into_inner();
     let path = get_user_dir(id, None).join(path.trim_start_matches('/'));
@@ -44,5 +61,23 @@ pub async fn fetch(
         return Err(V1Error::TypeMismatch.into());
     }
 
-    Ok(NamedFile::open_async(path).await?.into_response(req))
+    Ok(match query.display.as_deref().unwrap_or_default() {
+        "inline" => {
+            NamedFile::open_async(path)
+                .await?
+                .set_content_disposition(ContentDisposition {
+                    disposition: http::header::DispositionType::Inline,
+                    parameters: Vec::new(),
+                })
+        }
+        "text" => NamedFile::open_async(path)
+            .await?
+            .set_content_type(mime::TEXT_PLAIN)
+            .set_content_disposition(ContentDisposition {
+                disposition: http::header::DispositionType::Inline,
+                parameters: Vec::new(),
+            }),
+        _ => NamedFile::open_async(path).await?,
+    }
+    .into_response(req))
 }
