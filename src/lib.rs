@@ -1,4 +1,5 @@
 #![allow(clippy::module_inception)]
+#![feature(trait_upcasting)]
 #![feature(let_chains)]
 pub mod api;
 pub mod functions;
