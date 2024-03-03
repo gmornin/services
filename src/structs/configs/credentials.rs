@@ -11,8 +11,6 @@ pub struct CredentialsConfig {
     pub hash_salt: String,
     #[serde(default)]
     pub smtp: SmtpConfig,
-    #[serde(default)]
-    pub ssl_paths: SslConfig,
 }
 
 impl ConfigTrait for CredentialsConfig {
@@ -30,13 +28,4 @@ pub struct SmtpConfig {
     pub relay: String,
     #[serde_inline_default("something like `GoodMorningTex<username@gmail.com>`".to_string())]
     pub from: String,
-}
-
-#[serde_inline_default]
-#[derive(Serialize, Deserialize, Debug, Clone, DefaultFromSerde)]
-pub struct SslConfig {
-    #[serde_inline_default("change me path to chain file /etc/letsencrypt/live/yourdomain.com/fullchain.pem".to_string())]
-    pub chain: String,
-    #[serde_inline_default("change me path to private key /etc/letsencrypt/live/yourdomain.com/privkey.pem".to_string())]
-    pub key: String,
 }

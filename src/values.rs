@@ -5,8 +5,6 @@
 use dirs::home_dir;
 use lettre::transport::smtp::authentication::Credentials;
 use mongodb::{Collection, Database};
-use rustls::{Certificate, PrivateKey, ServerConfig};
-use rustls_pemfile::{certs, pkcs8_private_keys};
 use serde::{Deserialize, Serialize};
 use simplelog::*;
 
@@ -20,14 +18,7 @@ use crate::{
     },
     traits::ConfigTrait,
 };
-use std::{
-    collections::HashSet,
-    fs::{self, File},
-    io::BufReader,
-    path::PathBuf,
-    sync::OnceLock,
-    time::Duration,
-};
+use std::{collections::HashSet, fs, path::PathBuf, sync::OnceLock, time::Duration};
 
 pub static PFP_LIMIT: OnceLock<u64> = OnceLock::new();
 pub static QUEUE_LIMIT: OnceLock<usize> = OnceLock::new();
@@ -44,8 +35,6 @@ pub static SMTP_PASSWORD: OnceLock<String> = OnceLock::new();
 pub static SMTP_RELAY: OnceLock<String> = OnceLock::new();
 pub static SMTP_FROM: OnceLock<String> = OnceLock::new();
 pub static SMTP_CREDS: OnceLock<Credentials> = OnceLock::new();
-pub static CERT_CHAIN: OnceLock<PathBuf> = OnceLock::new();
-pub static CERT_KEY: OnceLock<PathBuf> = OnceLock::new();
 
 pub static MONGO_HOST: OnceLock<String> = OnceLock::new();
 pub static USERCONTENT: OnceLock<PathBuf> = OnceLock::new();
@@ -106,10 +95,6 @@ pub async fn valinit() {
             cert_config.smtp.username,
             cert_config.smtp.password,
         ))
-        .unwrap();
-    CERT_KEY.set(parse_path(cert_config.ssl_paths.key)).unwrap();
-    CERT_CHAIN
-        .set(parse_path(cert_config.ssl_paths.chain))
         .unwrap();
 
     let storage_config = *StorageConfig::load().unwrap();
@@ -227,35 +212,4 @@ pub fn logs_init(options: &LogOptions) {
     }
 
     CombinedLogger::init(loggers).unwrap();
-}
-
-pub fn load_rustls_config(chain: &PathBuf, key: &PathBuf) -> rustls::ServerConfig {
-    // init server config builder with safe defaults
-    let config = ServerConfig::builder()
-        .with_safe_defaults()
-        .with_no_client_auth();
-
-    // load TLS key/cert files
-    let cert_file = &mut BufReader::new(File::open(chain).unwrap());
-    let key_file = &mut BufReader::new(File::open(key).unwrap());
-
-    // convert files to key/cert objects
-    let cert_chain = certs(cert_file)
-        .unwrap()
-        .into_iter()
-        .map(Certificate)
-        .collect();
-    let mut keys: Vec<PrivateKey> = pkcs8_private_keys(key_file)
-        .unwrap()
-        .into_iter()
-        .map(PrivateKey)
-        .collect();
-
-    // exit if no keys could be parsed
-    if keys.is_empty() {
-        eprintln!("Could not locate PKCS 8 private keys.");
-        std::process::exit(1);
-    }
-
-    config.with_single_cert(cert_chain, keys.remove(0)).unwrap()
 }

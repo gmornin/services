@@ -7,15 +7,15 @@ edition = "2021"
 
 [dependencies]
 actix-web = { version = "4.3", features = ["cookies", "macros", "rustls-0_20"], default-features = false }
-rustls = { version = "0.20", default-features = false }
-rustls-pemfile = "1"
+rustls = { version = "0.23", default-features = false }
+rustls-pemfile = "2"
 async-trait = "0.1"
 chrono = { version = "0.4", default-features = false }
 simplelog = { version = "0.12", features = ["termcolor"], default-features = false }
 dyn-clone = "1.0"
-fastrand = "1.9"
+fastrand = "2.0"
 hex = { version = "0.4", default-features = false }
-lettre = { version = "0.10", features = ["builder", "smtp-transport", "tokio1-native-tls"], default-features = false }
+lettre = { version = "0.11", features = ["builder", "smtp-transport", "tokio1-native-tls"], default-features = false }
 mongodb = "2.4"
 serde = { version = "1.0", default-features = false }
 sha2 = { version = "0.10", default-features = false }
@@ -28,7 +28,7 @@ actix-files = "0.6"
 html-escape = { version = "0.2", default-features = false }
 # actix-extensible-rate-limit = "0.2"
 # goodmorning-bindings = {path = "../rust-bindings", version = "*"}
-goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="d7f6d32", version = "*"}
+goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="104aa90", version = "*"}
 regex = { version = "1.8", default-features = false }
 xdg-mime = "0.3"
 mime = "0.3"
@@ -36,7 +36,7 @@ mime = "0.3"
 # parking_lot = "0.12"
 dirs = "5.0"
 serde_yaml = "0.9"
-serde-inline-default = "0.1.1"
+serde-inline-default = "0.2"
 serde_default = "0.1.0"
 
 # pulldown-cmark = "0.9"

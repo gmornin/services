@@ -13,7 +13,7 @@ async fn main() {
     });
     let jobs: Data<Jobs> = Data::new(Jobs::default());
 
-    let mut server = HttpServer::new(move || {
+    HttpServer::new(move || {
         // let backend = InMemoryBackend::builder().build();
         // let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
         //     .real_ip_key()
@@ -33,22 +33,12 @@ async fn main() {
             })
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)
-    });
-
-    if *HTTP.get().unwrap() {
-        server = server
-            .bind(("0.0.0.0", *HTTP_PORT.get().unwrap()))
-            .expect("cannot bind to port");
-    }
-
-    if *HTTPS.get().unwrap() {
-        let config = load_rustls_config(CERT_CHAIN.get().unwrap(), CERT_KEY.get().unwrap());
-        server = server
-            .bind_rustls(("0.0.0.0", *HTTPS_PORT.get().unwrap()), config)
-            .unwrap();
-    }
-
-    server.run().await.expect("server down");
+    })
+    .bind(("0.0.0.0", *HTTP_PORT.get().unwrap()))
+    .expect("cannot bind to port")
+    .run()
+    .await
+    .expect("server down");
 }
 
 #[get("/")]
