@@ -6,31 +6,30 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = {version = "4.3", features = ["rustls"]}
-rustls = "0.20"
+actix-web = { version = "4.3", features = ["cookies", "macros", "rustls-0_20"], default-features = false }
+rustls = { version = "0.20", default-features = false }
 rustls-pemfile = "1"
 async-trait = "0.1"
-chrono = "0.4"
-simplelog = "0.12"
-log = "0.4"
+chrono = { version = "0.4", default-features = false }
+simplelog = { version = "0.12", features = ["termcolor"], default-features = false }
 dyn-clone = "1.0"
 fastrand = "1.9"
-hex = "0.4"
-lettre = { version = "0.10", features = ["tokio1", "tokio1-native-tls"] }
+hex = { version = "0.4", default-features = false }
+lettre = { version = "0.10", features = ["builder", "smtp-transport", "tokio1-native-tls"], default-features = false }
 mongodb = "2.4"
-serde = "1.0"
-sha2 = "0.10"
-tokio = { version = "1.26", features = ["time"] }
+serde = { version = "1.0", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+tokio = "1.26"
 typetag = "0.2"
-actix-multipart = "0.6"
-futures-util = "0.3"
+actix-multipart = { version = "0.6", features = ["tempfile"], default-features = false }
+futures-util = { version = "0.3", default-features = false }
 async-recursion = "1.0"
 actix-files = "0.6"
-html-escape = "0.2"
+html-escape = { version = "0.2", default-features = false }
 # actix-extensible-rate-limit = "0.2"
 # goodmorning-bindings = {path = "../rust-bindings", version = "*"}
-goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="ec843fd", version = "*"}
-regex = "1.8"
+goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="d7f6d32", version = "*"}
+regex = { version = "1.8", default-features = false }
 xdg-mime = "0.3"
 mime = "0.3"
 # actix-web-lab = "0.19"
