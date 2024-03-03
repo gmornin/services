@@ -34,7 +34,7 @@ async fn main() {
         // .app_data(Data::new(storage_limits))
         // .wrap(middleware)
     })
-    .bind(("0.0.0.0", *HTTP_PORT.get().unwrap()))
+    .bind(("0.0.0.0", *PORT.get().unwrap()))
     .expect("cannot bind to port")
     .run()
     .await

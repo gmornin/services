@@ -49,10 +49,7 @@ pub static FILE_CHECK_EXT: OnceLock<HashSet<String>> = OnceLock::new();
 
 // pub static PFP_DEFAULT: OnceLock<PathBuf> = OnceLock::new();
 pub static VIS_DEFAULT: OnceLock<ItemVisibility> = OnceLock::new();
-pub static HTTP_PORT: OnceLock<u16> = OnceLock::new();
-pub static HTTPS_PORT: OnceLock<u16> = OnceLock::new();
-pub static HTTP: OnceLock<bool> = OnceLock::new();
-pub static HTTPS: OnceLock<bool> = OnceLock::new();
+pub static PORT: OnceLock<u16> = OnceLock::new();
 pub static FORWARDED: OnceLock<bool> = OnceLock::new();
 
 pub static CREATE_WHITELIST: OnceLock<Vec<String>> = OnceLock::new();
@@ -128,10 +125,7 @@ pub async fn valinit() {
     //     .set(parse_path(defaults_config.pfp_default_path))
     //     .unwrap();
     VIS_DEFAULT.set(defaults_config.default_visibility).unwrap();
-    HTTP_PORT.set(defaults_config.http_port).unwrap();
-    HTTPS_PORT.set(defaults_config.https_port).unwrap();
-    HTTP.set(defaults_config.http).unwrap();
-    HTTPS.set(defaults_config.https).unwrap();
+    PORT.set(defaults_config.http_port).unwrap();
     FORWARDED.set(defaults_config.forwarded).unwrap();
 
     DATABASE

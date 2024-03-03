@@ -13,12 +13,6 @@ pub struct DefaultsConfig {
     pub default_visibility: ItemVisibility,
     #[serde_inline_default(80)]
     pub http_port: u16,
-    #[serde_inline_default(443)]
-    pub https_port: u16,
-    #[serde_inline_default(true)]
-    pub http: bool,
-    #[serde_inline_default(false)]
-    pub https: bool,
     #[serde_inline_default(true)]
     pub forwarded: bool,
 }
