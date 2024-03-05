@@ -38,10 +38,6 @@ async fn move_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error
         return Err(V1Error::FileNotFound.into());
     }
 
-    if !fs::try_exists(&to_buf.parent().unwrap()).await? {
-        return Err(V1Error::FileNotFound.into());
-    }
-
     if from_buf.extension() != to_buf.extension() {
         return Err(V1Error::ExtensionMismatch.into());
     }
@@ -89,7 +85,9 @@ pub async fn move_overwrite(post: Json<V1SelfFromTo>) -> HttpResponse {
     from_res(move_createdirs_overwrite_task(post).await)
 }
 
-async fn move_createdirs_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error>> {
+async fn move_createdirs_overwrite_task(
+    post: Json<V1SelfFromTo>,
+) -> Result<V1Response, Box<dyn Error>> {
     let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
@@ -109,10 +107,6 @@ async fn move_createdirs_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Re
     let from_buf = get_user_dir(account.id, None).join(user_frombuf);
 
     if !fs::try_exists(&from_buf).await? {
-        return Err(V1Error::FileNotFound.into());
-    }
-
-    if !fs::try_exists(&to_buf.parent().unwrap()).await? {
         return Err(V1Error::FileNotFound.into());
     }
 

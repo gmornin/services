@@ -14,7 +14,7 @@ pub fn editable(path: &Path, services: &[GMServices]) -> bool {
         .map(|section| section.to_str().unwrap())
         .collect::<Vec<_>>();
     path_slice.len() >= 2
-        && !(path_slice[1] == ".system" && path_slice[2] == "Trash")
+        && (path_slice[1] != ".system" || path_slice[2] == "trash")
         && match GMServices::from_str(path_slice[0]) {
             Some(service) => services.contains(&service),
             None => false,

@@ -30,7 +30,7 @@ async fn touch_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error>
     }
 
     if !fs::try_exists(&path_buf.parent().unwrap()).await? {
-        return Err(V1Error::FileNotFound.into())
+        return Err(V1Error::FileNotFound.into());
     }
 
     fs::File::create(path_buf).await?;

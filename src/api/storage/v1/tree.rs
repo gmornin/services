@@ -1,6 +1,6 @@
 use actix_web::{web::Path, *};
-use tokio::fs;
 use std::error::Error;
+use tokio::fs;
 
 use crate::{functions::*, structs::*};
 
@@ -16,11 +16,11 @@ async fn tree_task(path: Path<(String, String)>) -> Result<V1Response, Box<dyn E
     let account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
-    
+
     let src = get_user_dir(account.id, None).join(path);
 
     if !fs::try_exists(&src.parent().unwrap()).await? {
-        return Err(V1Error::FileNotFound.into())
+        return Err(V1Error::FileNotFound.into());
     }
 
     Ok(V1Response::Tree {

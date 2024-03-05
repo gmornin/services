@@ -42,7 +42,7 @@ async fn upload_task(
     }
 
     if !fs::try_exists(&path_buf.parent().unwrap()).await? {
-        return Err(V1Error::FileNotFound.into())
+        return Err(V1Error::FileNotFound.into());
     }
 
     let size = req
