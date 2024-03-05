@@ -38,6 +38,10 @@ async fn upload_overwrite_task(
 
     let path_buf = get_user_dir(account.id, None).join(user_path);
 
+    if !fs::try_exists(&path_buf.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into())
+    }
+
     let size = req
         .headers()
         .get("content-length")

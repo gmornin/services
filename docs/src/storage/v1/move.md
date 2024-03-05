@@ -1,4 +1,4 @@
-POST `/api/storage/v1/move` or `/api/storage/v1/move-overwrite`
+POST `/api/storage/v1/move` or `/api/storage/v1/move-overwrite` or `/api/storage/v1/move-createdirs` or `/api/storage/v1/move-createdirs-overwrite`
 
 ---
 

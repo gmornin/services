@@ -44,6 +44,10 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         return Err(V1Error::ExtensionMismatch.into());
     }
 
+    if !fs::try_exists(&to_buf.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into());
+    }
+
     let metadata = fs::metadata(&from_buf).await?;
     let to_metedata = if fs::try_exists(&to_buf).await? {
         Some(fs::metadata(&to_buf).await?)

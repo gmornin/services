@@ -33,6 +33,10 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         return Err(V1Error::PathOccupied.into());
     }
 
+    if !fs::try_exists(&to_buf.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into());
+    }
+
     let mut vis = None;
 
     if post.from_userid == account.id {

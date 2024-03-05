@@ -11,6 +11,7 @@ mod mkdir;
 mod mkdir_multiple;
 mod r#move;
 mod move_overwrite;
+mod move_createdirs;
 mod remove_visibility;
 mod set_visibility;
 mod touch;
@@ -36,6 +37,8 @@ pub fn scope() -> Scope {
         .service(copy_overwrite::copy_overwrite)
         .service(r#move::r#move)
         .service(move_overwrite::r#move)
+        .service(move_createdirs::r#move)
+        .service(move_createdirs::move_overwrite)
         .service(file::file)
         .service(diritems::diritems)
         .service(tree::tree)

@@ -33,6 +33,10 @@ async fn mkdir_task(path: &str, token: &str) -> Result<V1Response, Box<dyn Error
         return Err(V1Error::PathOccupied.into());
     }
 
+    if !fs::try_exists(&path_buf.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into());
+    }
+
     // fs::create_dir_all(&path_buf).await?;
     fs::create_dir(&path_buf).await?;
 

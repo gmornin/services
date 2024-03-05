@@ -41,6 +41,10 @@ async fn upload_task(
         return Err(V1Error::PathOccupied.into());
     }
 
+    if !fs::try_exists(&path_buf.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into())
+    }
+
     let size = req
         .headers()
         .get("content-length")

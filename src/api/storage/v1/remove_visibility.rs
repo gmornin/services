@@ -1,4 +1,5 @@
 use actix_web::{web::Json, *};
+use tokio::fs;
 
 use std::{error::Error, path::PathBuf};
 
@@ -23,6 +24,10 @@ async fn remove_visibility_task(post: Json<V1PathOnly>) -> Result<V1Response, Bo
     }
 
     let path_buf = get_user_dir(account.id, None).join(user_path);
+
+    if !fs::try_exists(&path_buf).await? {
+        return Err(V1Error::FileNotFound.into());
+    }
 
     let file_name = path_buf.file_name().unwrap().to_str().unwrap();
 

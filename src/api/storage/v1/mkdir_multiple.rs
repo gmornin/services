@@ -46,6 +46,10 @@ async fn mkdir_single(path: &str, account: &Account) -> Result<V1Response, Box<d
         return Err(V1Error::PathOccupied.into());
     }
 
+    if !fs::try_exists(&path_buf.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into());
+    }
+
     // fs::create_dir_all(&path_buf).await?;
     fs::create_dir(&path_buf).await?;
 

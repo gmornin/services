@@ -1,9 +1,10 @@
 use actix_web::{web::Path, *};
+use tokio::fs;
 use std::error::Error;
 
 use crate::{functions::*, structs::*};
 
-use goodmorning_bindings::services::v1::V1Response;
+use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 #[get("/tree/{token}/{path:.*}")]
 pub async fn tree(path: Path<(String, String)>) -> HttpResponse {
@@ -15,8 +16,13 @@ async fn tree_task(path: Path<(String, String)>) -> Result<V1Response, Box<dyn E
     let account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
-
+    
     let src = get_user_dir(account.id, None).join(path);
+
+    if !fs::try_exists(&src.parent().unwrap()).await? {
+        return Err(V1Error::FileNotFound.into())
+    }
+
     Ok(V1Response::Tree {
         content: dirtree(&src, true, Visibilities::visibility(&src).await?).await?,
     })
