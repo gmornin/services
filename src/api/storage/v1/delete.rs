@@ -55,8 +55,8 @@ async fn delete_task(post: Json<V1PathOnly>) -> Result<V1Response, Box<dyn Error
         .unwrap();
     if visibilities.0.contains_key(&file_name) {
         visibilities.0.remove(&file_name);
+        visibilities.save(path_buf.parent().unwrap()).await?;
     }
-    visibilities.save(path_buf.parent().unwrap()).await?;
 
     Ok(V1Response::FileItemDeleted)
 }

@@ -66,8 +66,8 @@ async fn delete_single(path: &str, account: &mut Account) -> Result<V1Response, 
         .unwrap();
     if visibilities.0.contains_key(&file_name) {
         visibilities.0.remove(&file_name);
+        visibilities.save(path_buf.parent().unwrap()).await?;
     }
-    visibilities.save(path_buf.parent().unwrap()).await?;
 
     Ok(V1Response::FileItemDeleted)
 }

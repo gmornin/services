@@ -93,6 +93,7 @@ async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box
         from_visibilities.save(to_buf.parent().unwrap()).await?;
     } else {
         from_visibilities.0.remove(&file_name);
+        from_visibilities.save(from_buf.parent().unwrap()).await?;
         let mut new_visibilities = Visibilities::read_dir(to_buf.parent().unwrap()).await?;
         new_visibilities.0.insert(file_name, from_visibility);
         new_visibilities.save(to_buf.parent().unwrap()).await?;
