@@ -29,6 +29,10 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
     let to_buf = get_user_dir(account.id, None).join(user_tobuf);
     let from_buf = get_user_dir(post.from_userid, None).join(user_frombuf);
 
+    if to_buf == from_buf {
+        return Ok(V1Response::Copied);
+    }
+
     if fs::try_exists(&to_buf).await? {
         return Err(V1Error::PathOccupied.into());
     }

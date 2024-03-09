@@ -30,6 +30,10 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     let to_buf = get_user_dir(account.id, None).join(user_tobuf);
     let from_buf = get_user_dir(post.from_userid, None).join(user_frombuf);
 
+    if to_buf == from_buf {
+        return Ok(V1Response::Copied);
+    }
+
     let vis = Visibilities::visibility(&from_buf).await?;
 
     if post.from_userid == account.id {

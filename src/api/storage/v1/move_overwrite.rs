@@ -30,6 +30,10 @@ async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box
     let to_buf = get_user_dir(account.id, None).join(user_tobuf);
     let from_buf = get_user_dir(account.id, None).join(user_frombuf);
 
+    if to_buf == from_buf {
+        return Ok(V1Response::Moved);
+    }
+
     if !fs::try_exists(&from_buf).await? {
         return Err(V1Error::FileNotFound.into());
     }
