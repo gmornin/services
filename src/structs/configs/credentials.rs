@@ -11,6 +11,8 @@ pub struct CredentialsConfig {
     pub hash_salt: String,
     #[serde(default)]
     pub smtp: SmtpConfig,
+    #[serde_inline_default(4)]
+    pub token_length: u32,
 }
 
 impl ConfigTrait for CredentialsConfig {

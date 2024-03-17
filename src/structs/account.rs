@@ -6,8 +6,8 @@ use mongodb::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    functions::*, structs::*, traits::*, ACCOUNTS, DATABASE, EMAIL_VERIFICATION_DURATION, TRIGGERS,
-    VERIFICATION,
+    functions::*, structs::*, traits::*, ACCOUNTS, DATABASE, EMAIL_VERIFICATION_DURATION,
+    STORAGE_SIZE_RECHECK, TOKEN_LENGTH, TRIGGERS, USERNAME_MAX, USERNAME_MIN, VERIFICATION,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -30,7 +30,7 @@ impl StorageSize {
     }
 
     pub fn outdated(&self) -> bool {
-        self.last_checked + 43200 < Utc::now().timestamp() as u64
+        self.last_checked + STORAGE_SIZE_RECHECK.get().unwrap() < Utc::now().timestamp() as u64
     }
 
     pub async fn update(&mut self, id: i64) -> Result<(), Box<dyn Error>> {
@@ -172,8 +172,8 @@ impl Account {
     }
 
     pub fn username_valid(s: &str) -> bool {
-        s.len() < 33
-            && s.len() > 2
+        s.len() <= *USERNAME_MAX.get().unwrap()
+            && s.len() >= *USERNAME_MIN.get().unwrap()
             && s.chars()
                 .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
     }
@@ -312,9 +312,7 @@ impl Account {
     }
 
     fn token() -> String {
-        const TOKEN_LENGTH: u8 = 4;
-
-        (0..TOKEN_LENGTH)
+        (0..*TOKEN_LENGTH.get().unwrap())
             .map(|_| Self::token_section())
             .collect::<Vec<_>>()
             .join("-")

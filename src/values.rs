@@ -28,6 +28,11 @@ pub static EMAIL_VERIFICATION_DURATION: OnceLock<Duration> = OnceLock::new();
 pub static EMAIL_VERIFICATION_COOLDOWN: OnceLock<u64> = OnceLock::new();
 pub static ALLOW_REGISTER: OnceLock<bool> = OnceLock::new();
 pub static VERIFICATION: OnceLock<bool> = OnceLock::new();
+pub static COMPILE_TIME_LIMIT: OnceLock<Duration> = OnceLock::new();
+pub static STATUS_LENGTH_LIMIT: OnceLock<usize> = OnceLock::new();
+pub static STORAGE_SIZE_RECHECK: OnceLock<u64> = OnceLock::new();
+pub static USERNAME_MIN: OnceLock<usize> = OnceLock::new();
+pub static USERNAME_MAX: OnceLock<usize> = OnceLock::new();
 
 pub static HASH_SALT: OnceLock<String> = OnceLock::new();
 pub static SMTP_USERNAME: OnceLock<String> = OnceLock::new();
@@ -35,6 +40,7 @@ pub static SMTP_PASSWORD: OnceLock<String> = OnceLock::new();
 pub static SMTP_RELAY: OnceLock<String> = OnceLock::new();
 pub static SMTP_FROM: OnceLock<String> = OnceLock::new();
 pub static SMTP_CREDS: OnceLock<Credentials> = OnceLock::new();
+pub static TOKEN_LENGTH: OnceLock<u32> = OnceLock::new();
 
 pub static MONGO_HOST: OnceLock<String> = OnceLock::new();
 pub static USERCONTENT: OnceLock<PathBuf> = OnceLock::new();
@@ -82,17 +88,33 @@ pub async fn valinit() {
         .unwrap();
     ALLOW_REGISTER.set(limit_configs.allow_register).unwrap();
     VERIFICATION.set(limit_configs.verification).unwrap();
+    COMPILE_TIME_LIMIT
+        .set(Duration::from_millis(limit_configs.compile_time_limit))
+        .unwrap();
+    STATUS_LENGTH_LIMIT
+        .set(limit_configs.length_limits.status_limit)
+        .unwrap();
+    STORAGE_SIZE_RECHECK
+        .set(limit_configs.storage_size_recheck)
+        .unwrap();
+    USERNAME_MIN
+        .set(limit_configs.length_limits.username_min)
+        .unwrap();
+    USERNAME_MAX
+        .set(limit_configs.length_limits.username_max)
+        .unwrap();
 
-    let cert_config = *CredentialsConfig::load().unwrap();
-    HASH_SALT.set(cert_config.hash_salt).unwrap();
-    SMTP_RELAY.set(cert_config.smtp.relay).unwrap();
-    SMTP_FROM.set(cert_config.smtp.from).unwrap();
+    let creds_config = *CredentialsConfig::load().unwrap();
+    HASH_SALT.set(creds_config.hash_salt).unwrap();
+    SMTP_RELAY.set(creds_config.smtp.relay).unwrap();
+    SMTP_FROM.set(creds_config.smtp.from).unwrap();
     SMTP_CREDS
         .set(Credentials::new(
-            cert_config.smtp.username,
-            cert_config.smtp.password,
+            creds_config.smtp.username,
+            creds_config.smtp.password,
         ))
         .unwrap();
+    TOKEN_LENGTH.set(creds_config.token_length).unwrap();
 
     let storage_config = *StorageConfig::load().unwrap();
     MONGO_HOST.set(storage_config.mongo_host).unwrap();

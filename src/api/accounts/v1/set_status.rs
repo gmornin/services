@@ -17,7 +17,7 @@ async fn set_status_task(post: Json<V1SetStatus>) -> Result<V1Response, Box<dyn 
         None => return Err(V1Error::InvalidToken.into()),
     };
 
-    if post.new.len() > 128 {
+    if post.new.len() > *STATUS_LENGTH_LIMIT.get().unwrap() {
         return Err(V1Error::ExceedsMaximumLength.into());
     }
 

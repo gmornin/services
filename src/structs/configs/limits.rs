@@ -21,6 +21,12 @@ pub struct LimitsConfig {
     pub allow_register: bool,
     #[serde_inline_default(true)]
     pub verification: bool,
+    #[serde_inline_default(20000)]
+    pub compile_time_limit: u64,
+    #[serde_inline_default(43200)]
+    pub storage_size_recheck: u64,
+    #[serde(default)]
+    pub length_limits: LengthLimits,
 }
 
 impl ConfigTrait for LimitsConfig {
@@ -41,4 +47,15 @@ pub struct QueueConfigs {
     pub max_concurrent: usize,
     #[serde_inline_default(9999)]
     pub queue_limit: usize,
+}
+
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Clone, DefaultFromSerde)]
+pub struct LengthLimits {
+    #[serde_inline_default(128)]
+    pub status_limit: usize,
+    #[serde_inline_default(3)]
+    pub username_min: usize,
+    #[serde_inline_default(32)]
+    pub username_max: usize,
 }
