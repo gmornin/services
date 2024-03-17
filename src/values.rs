@@ -28,7 +28,6 @@ pub static EMAIL_VERIFICATION_DURATION: OnceLock<Duration> = OnceLock::new();
 pub static EMAIL_VERIFICATION_COOLDOWN: OnceLock<u64> = OnceLock::new();
 pub static ALLOW_REGISTER: OnceLock<bool> = OnceLock::new();
 pub static VERIFICATION: OnceLock<bool> = OnceLock::new();
-pub static COMPILE_TIME_LIMIT: OnceLock<Duration> = OnceLock::new();
 pub static STATUS_LENGTH_LIMIT: OnceLock<usize> = OnceLock::new();
 pub static STORAGE_SIZE_RECHECK: OnceLock<u64> = OnceLock::new();
 pub static USERNAME_MIN: OnceLock<usize> = OnceLock::new();
@@ -88,9 +87,6 @@ pub async fn valinit() {
         .unwrap();
     ALLOW_REGISTER.set(limit_configs.allow_register).unwrap();
     VERIFICATION.set(limit_configs.verification).unwrap();
-    COMPILE_TIME_LIMIT
-        .set(Duration::from_millis(limit_configs.compile_time_limit))
-        .unwrap();
     STATUS_LENGTH_LIMIT
         .set(limit_configs.length_limits.status_limit)
         .unwrap();

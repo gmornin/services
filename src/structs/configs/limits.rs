@@ -21,8 +21,6 @@ pub struct LimitsConfig {
     pub allow_register: bool,
     #[serde_inline_default(true)]
     pub verification: bool,
-    #[serde_inline_default(20000)]
-    pub compile_time_limit: u64,
     #[serde_inline_default(43200)]
     pub storage_size_recheck: u64,
     #[serde(default)]

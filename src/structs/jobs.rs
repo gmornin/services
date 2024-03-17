@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use goodmorning_bindings::{services::v1::*, structs::*};
@@ -8,7 +9,7 @@ use goodmorning_bindings::{services::v1::*, structs::*};
 use tokio::sync::oneshot::{self, Sender};
 use tokio::time::sleep;
 
-use crate::{traits::TaskItem, COMPILE_TIME_LIMIT};
+use crate::traits::TaskItem;
 
 #[derive(Default)]
 pub struct Jobs(pub Mutex<HashMap<i64, Arc<Mutex<Job>>>>);
@@ -30,6 +31,7 @@ impl Jobs {
         task: Box<dyn TaskItem>,
         max_concurrent: usize,
         ver: ApiVer,
+        time_limit: Duration,
     ) -> CommonRes {
         let arc = self.get(id);
 
@@ -39,6 +41,7 @@ impl Jobs {
             SingleJob {
                 task,
                 id: fastrand::u64(..),
+                time_limit,
             },
             ver,
         )
@@ -108,7 +111,7 @@ impl Job {
             let _handle = tokio::task::spawn(async move {
                 jobwrapper.tx.send(tokio::select! {
                     res = jobwrapper.job.task.run(&jobwrapper.api_ver, job.id) => res,
-                    _ = sleep(*COMPILE_TIME_LIMIT.get().unwrap()) => CommonRes::timedout(&jobwrapper.api_ver)
+                    _ = sleep(jobwrapper.job.time_limit) => CommonRes::timedout(&jobwrapper.api_ver)
                 }).unwrap();
 
                 let mut unlocked = arc.lock().unwrap();
@@ -141,6 +144,7 @@ pub struct SingleJobWrapper {
 pub struct SingleJob {
     pub task: Box<dyn TaskItem>,
     pub id: u64,
+    pub time_limit: Duration,
 }
 
 // #[derive(Debug, Clone)]
