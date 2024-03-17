@@ -28,7 +28,7 @@ actix-files = "0.6"
 html-escape = { version = "0.2", default-features = false }
 # actix-extensible-rate-limit = "0.2"
 # goodmorning-bindings = {path = "../rust-bindings", version = "*"}
-goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="104aa90", version = "*"}
+goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="196c630", version = "*"}
 regex = { version = "1.8", default-features = false }
 xdg-mime = "0.3"
 mime = "0.3"
