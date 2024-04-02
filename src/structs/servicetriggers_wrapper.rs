@@ -44,8 +44,8 @@ impl Peekable for ServiceTriggerWrapper {
       <img src="/static/services/images/favicon-dark.svg" width="100" id="icon" />
       <br />
       <h1>Is this your email?</h1>
-      Username: {email}<br />
-      Email: {username}<br />
+      Email: {email}<br />
+      Username: {username}<br />
       User ID: {id}
       <div id="buts">
         <button class="greenbut" onclick="trigger()">Yes, verify this account.</button>

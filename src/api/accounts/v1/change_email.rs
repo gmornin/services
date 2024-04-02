@@ -38,6 +38,10 @@ async fn change_email_task(post: Json<V1ChangeEmail>) -> Result<V1Response, Box<
         return Err(V1Error::EmailTaken.into());
     }
 
+    if !Account::is_email_valid(&new) {
+        return Err(V1Error::Blacklisted.into());
+    }
+
     account.verified = false;
     account.email = new;
 

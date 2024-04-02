@@ -13,8 +13,8 @@ use xdg_mime::SharedMimeInfo;
 use crate::{
     functions::{get_accounts, get_client, get_counters, get_database, get_triggers, parse_path},
     structs::{
-        Account, Counter, CredentialsConfig, DefaultsConfig, FileCheckType, ItemVisibility,
-        LimitsConfig, StorageConfig, StorageLimitConfigs, Trigger, WhitelistConfig,
+        Account, Counter, CredentialsConfig, DefaultsConfig, EmailLists, FileCheckType,
+        ItemVisibility, LimitsConfig, StorageConfig, StorageLimitConfigs, Trigger, WhitelistConfig,
     },
     traits::ConfigTrait,
 };
@@ -58,6 +58,7 @@ pub static PORT: OnceLock<u16> = OnceLock::new();
 pub static FORWARDED: OnceLock<bool> = OnceLock::new();
 
 pub static CREATE_WHITELIST: OnceLock<Vec<String>> = OnceLock::new();
+pub static EMAIL_WHITELIST: OnceLock<EmailLists> = OnceLock::new();
 
 pub static DATABASE: OnceLock<Database> = OnceLock::new();
 pub static ACCOUNTS: OnceLock<Collection<Account>> = OnceLock::new();
@@ -120,7 +121,9 @@ pub async fn valinit() {
         .unwrap();
     SELF_ADDR.set(storage_config.self_addr).unwrap();
     FILE_CHECK.set(storage_config.file_check).unwrap();
-    SERVICES_STATIC.set(storage_config.static_path).unwrap();
+    SERVICES_STATIC
+        .set(parse_path(storage_config.static_path))
+        .unwrap();
 
     let mut whitelist_config = *WhitelistConfig::load().unwrap();
     whitelist_config.create.sort();
@@ -136,6 +139,7 @@ pub async fn valinit() {
     FILE_CHECK_EXT
         .set(HashSet::from_iter(whitelist_config.file_check.file_exts))
         .unwrap();
+    EMAIL_WHITELIST.set(whitelist_config.emails.load()).unwrap();
 
     let mongo_client = get_client().await;
     let defaults_config = *DefaultsConfig::load().unwrap();

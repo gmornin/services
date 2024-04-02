@@ -28,6 +28,11 @@ async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response,
     }
 
     let post = post.into_inner();
+
+    if !Account::is_email_valid(&post.email) {
+        return Err(V1Error::Blacklisted.into());
+    }
+
     if !Account::username_valid(&post.username) {
         return Err(V1Error::InvalidUsername.into());
     }

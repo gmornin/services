@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 use serde_inline_default::serde_inline_default;
@@ -31,8 +29,8 @@ pub struct StorageConfig {
     pub logs_path: String,
     #[serde_inline_default(FileCheckType::Whitelist)]
     pub file_check: FileCheckType,
-    #[serde_inline_default(PathBuf::from("static"))]
-    pub static_path: PathBuf,
+    #[serde_inline_default("static".to_string())]
+    pub static_path: String,
 }
 
 impl ConfigTrait for StorageConfig {

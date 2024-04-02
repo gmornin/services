@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     functions::*, structs::*, traits::*, ACCOUNTS, DATABASE, EMAIL_VERIFICATION_DURATION,
-    STORAGE_SIZE_RECHECK, TOKEN_LENGTH, TRIGGERS, USERNAME_MAX, USERNAME_MIN, VERIFICATION,
+    EMAIL_WHITELIST, STORAGE_SIZE_RECHECK, TOKEN_LENGTH, TRIGGERS, USERNAME_MAX, USERNAME_MIN,
+    VERIFICATION,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -138,6 +139,12 @@ impl Account {
     /// Checks if password matches
     pub fn password_matches(&self, password: &str) -> bool {
         self.hash(password) == self.password_hash
+    }
+
+    pub fn is_email_valid(email: &str) -> bool {
+        email
+            .split_once('@')
+            .is_some_and(|(_, dom)| EMAIL_WHITELIST.get().unwrap().allow(dom))
     }
 
     /// Creates an `EmailVerification` instance
