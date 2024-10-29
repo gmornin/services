@@ -8,7 +8,7 @@ use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1ChangeEmail, V1Error, V1Response};
 
 #[post("/change-email")]
-async fn change_email(post: Json<V1ChangeEmail>) -> HttpResponse {
+pub async fn change_email(post: Json<V1ChangeEmail>) -> HttpResponse {
     from_res(change_email_task(post).await)
 }
 

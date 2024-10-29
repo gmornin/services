@@ -6,7 +6,7 @@ use goodmorning_bindings::services::v1::*;
 use tokio::fs;
 
 #[post("/delete")]
-async fn delete(post: Json<V1TokenPassword>) -> HttpResponse {
+pub async fn delete(post: Json<V1TokenPassword>) -> HttpResponse {
     from_res(delete_task(post).await)
 }
 

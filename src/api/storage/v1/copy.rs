@@ -15,8 +15,47 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
         .await?
         .v1_restrict_verified()?;
 
-    let user_tobuf = PathBuf::from(post.to.trim_start_matches('/'));
-    let user_frombuf = PathBuf::from(post.from.trim_start_matches('/'));
+    let mut user_tobuf = PathBuf::from(post.to.trim_start_matches('/'));
+    let mut user_frombuf = PathBuf::from(post.from.trim_start_matches('/'));
+
+    match (
+        user_tobuf
+            .iter()
+            .map(|s| s.to_str().unwrap())
+            .collect::<Vec<_>>()
+            .as_slice(),
+        user_frombuf
+            .iter()
+            .map(|s| s.to_str().unwrap())
+            .collect::<Vec<_>>()
+            .as_slice(),
+    ) {
+        ([_, "Shared", u1, ..], [_, "Shared", u2, ..]) if u1 != u2 => {
+            return Err(V1Error::PermissionDenied.into())
+        }
+        ([_, "Shared", _, ..], [_, "Shared"]) => return Err(V1Error::PermissionDenied.into()),
+        ([_, "Shared"], _) => return Err(V1Error::PermissionDenied.into()),
+        ([_, "Shared", _, ..], [_, dir]) if *dir != "Shared" => {
+            return Err(V1Error::PermissionDenied.into())
+        }
+        ([_, "Shared", _, ..], [_]) => return Err(V1Error::PermissionDenied.into()),
+        ([_, "Shared", user, ..], _) => {
+            account = if let Some(account) = Account::find_by_username(user.to_string()).await? {
+                account.v1_restrict_verified()?
+            } else {
+                return Err(V1Error::FileNotFound.into());
+            };
+            user_tobuf = [user_tobuf.iter().next().unwrap()]
+                .into_iter()
+                .chain(user_tobuf.iter().skip(3))
+                .collect();
+            user_frombuf = [user_frombuf.iter().next().unwrap()]
+                .into_iter()
+                .chain(user_frombuf.iter().skip(3))
+                .collect();
+        }
+        _ => {}
+    }
 
     if !editable(&user_tobuf, &account.services)
         || is_bson(&user_frombuf)

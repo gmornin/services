@@ -1,5 +1,8 @@
-use goodmorning_bindings::services::v1::{V1Error, V1IdentifierType};
-use std::error::Error;
+use goodmorning_bindings::services::v1::{AccessType, V1Error, V1IdentifierType};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+};
 
 use chrono::Utc;
 use mongodb::{bson::doc, Database};
@@ -65,6 +68,9 @@ pub struct Account {
     pub counters: AccountCounters,
 
     pub stored: Option<StorageSize>,
+
+    #[serde(default)]
+    pub access: HashMap<AccessType, HashSet<i64>>,
 }
 
 impl Account {
@@ -133,6 +139,8 @@ impl Account {
             counters: AccountCounters::default(),
 
             stored: Some(StorageSize::new(0)),
+
+            access: HashMap::default(),
         })
     }
 

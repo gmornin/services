@@ -1,5 +1,5 @@
 use actix_web::{web::Json, *};
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, ffi::OsStr, path::PathBuf};
 use tokio::fs;
 
 use goodmorning_bindings::{
@@ -23,6 +23,12 @@ async fn mkdir_multiple_task(
     let account = Account::v1_get_by_token(token)
         .await?
         .v1_restrict_verified()?;
+
+    for path in paths.iter() {
+        if PathBuf::from(path).iter().nth(2) == Some(OsStr::new("Shared")) {
+            return Err(V1Error::PermissionDenied.into());
+        }
+    }
 
     let mut res = Vec::with_capacity(paths.len());
 

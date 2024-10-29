@@ -6,7 +6,7 @@ use goodmorning_bindings::services::v1::{V1Error, V1Response, V1TokenPassword};
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/regeneratetoken")]
-async fn regenerate_token(post: Json<V1TokenPassword>) -> HttpResponse {
+pub async fn regenerate_token(post: Json<V1TokenPassword>) -> HttpResponse {
     from_res(regenerate_token_task(post).await)
 }
 

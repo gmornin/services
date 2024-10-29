@@ -5,7 +5,7 @@ use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1Response, V1SetStatus};
 
 #[post("/set-status")]
-async fn set_status(post: Json<V1SetStatus>) -> HttpResponse {
+pub async fn set_status(post: Json<V1SetStatus>) -> HttpResponse {
     from_res(set_status_task(post).await)
 }
 

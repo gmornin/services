@@ -5,7 +5,7 @@ use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1ChangePassword, V1Error, V1Response};
 
 #[post("/change-password")]
-async fn changepw(post: Json<V1ChangePassword>) -> HttpResponse {
+pub async fn changepw(post: Json<V1ChangePassword>) -> HttpResponse {
     from_res(changepw_task(post).await)
 }
 

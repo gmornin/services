@@ -7,7 +7,7 @@ use crate::{functions::*, structs::*, traits::CollectionItem, *};
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 #[get("/revoke/{id}")]
-async fn revoke(path: Path<String>) -> HttpResponse {
+pub async fn revoke(path: Path<String>) -> HttpResponse {
     from_res(revoke_task(path).await)
 }
 

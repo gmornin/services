@@ -6,7 +6,7 @@ use goodmorning_bindings::services::v1::{V1All3, V1Error, V1Response};
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
 #[post("/create")]
-async fn create(post: Json<V1All3>, req: HttpRequest) -> HttpResponse {
+pub async fn create(post: Json<V1All3>, req: HttpRequest) -> HttpResponse {
     from_res(create_task(post, req).await)
 }
 

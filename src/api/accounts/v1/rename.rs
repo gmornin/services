@@ -5,7 +5,7 @@ use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1RenameAccount, V1Response};
 
 #[post("/rename")]
-async fn rename(post: Json<V1RenameAccount>) -> HttpResponse {
+pub async fn rename(post: Json<V1RenameAccount>) -> HttpResponse {
     from_res(rename_task(post).await)
 }
 

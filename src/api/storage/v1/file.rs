@@ -19,7 +19,7 @@ struct DisplayType {
 }
 
 #[get("/file/{token}/{path:.*}")]
-async fn file(
+pub async fn file(
     path: Path<(String, String)>,
     req: HttpRequest,
     query: Query<DisplayType>,
@@ -36,11 +36,28 @@ async fn file_task(
     query: Query<DisplayType>,
 ) -> Result<HttpResponse, Box<dyn Error>> {
     let (token, path) = path.into_inner();
-    let account = Account::v1_get_by_token(&token)
+    let mut account = Account::v1_get_by_token(&token)
         .await?
         .v1_restrict_verified()?;
 
-    let user_path = PathBuf::from(path.trim_start_matches('/'));
+    let mut user_path = PathBuf::from(path.trim_start_matches('/'));
+
+    if let [_, "Shared", user, ..] = user_path
+        .iter()
+        .map(|s| s.to_str().unwrap())
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        account = if let Some(account) = Account::find_by_username(user.to_string()).await? {
+            account.v1_restrict_verified()?
+        } else {
+            return Err(V1Error::FileNotFound.into());
+        };
+        user_path = [user_path.iter().next().unwrap()]
+            .into_iter()
+            .chain(user_path.iter().skip(3))
+            .collect();
+    }
 
     if has_dotdot(&user_path) || is_bson(&user_path) {
         return Err(V1Error::PermissionDenied.into());

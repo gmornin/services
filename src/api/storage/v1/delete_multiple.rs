@@ -1,5 +1,5 @@
 use actix_web::{web::Json, *};
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, ffi::OsStr, path::PathBuf};
 use tokio::fs;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, ACCOUNTS};
@@ -18,6 +18,12 @@ async fn delete_multiple_task(post: Json<V1MulpiplePaths>) -> Result<V1Response,
     let mut account = Account::v1_get_by_token(&post.token)
         .await?
         .v1_restrict_verified()?;
+
+    for path in post.paths.iter() {
+        if PathBuf::from(path).iter().nth(2) == Some(OsStr::new("Shared")) {
+            return Err(V1Error::PermissionDenied.into());
+        }
+    }
 
     let mut res = Vec::with_capacity(post.paths.len());
 

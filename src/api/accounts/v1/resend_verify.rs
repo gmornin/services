@@ -8,7 +8,7 @@ use actix_web::{post, web::Json, HttpResponse};
 use goodmorning_bindings::services::v1::{V1Error, V1Response, V1TokenOnly};
 
 #[post("/resend-verify")]
-async fn resend_verify(post: Json<V1TokenOnly>) -> HttpResponse {
+pub async fn resend_verify(post: Json<V1TokenOnly>) -> HttpResponse {
     from_res(resend_verify_task(post).await)
 }
 

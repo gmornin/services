@@ -1,17 +1,20 @@
-use std::{error::Error, path::Path, time::UNIX_EPOCH};
+use std::{error::Error, ffi::OsStr, path::Path, time::UNIX_EPOCH};
 
+use futures_util::StreamExt;
 use goodmorning_bindings::services::v1::*;
+use mongodb::bson::doc;
 use tokio::fs::{self, try_exists};
 
 use crate::{
     functions::{has_dotdot, is_bson},
-    structs::Visibilities,
+    structs::{Account, Visibilities},
+    ACCOUNTS,
 };
 
 use super::get_user_dir;
 
 pub async fn dir_items(
-    id: i64,
+    mut id: i64,
     path: &Path,
     is_owner: bool,
     skip_dir_check: bool,
@@ -20,13 +23,75 @@ pub async fn dir_items(
         return Err(V1Error::PermissionDenied.into());
     }
 
+    let mut path = path.to_path_buf();
+
+    let mut items = Vec::new();
+
+    if path.iter().count() == 1 {
+        items.push(V1DirItem {
+            visibility: V1Visibility {
+                inherited: true,
+                visibility: ItemVisibility::Private,
+            },
+            is_file: false,
+            name: "Shared".to_string(),
+            last_modified: 0,
+            size: 0,
+        });
+    } else if path.iter().nth(1) == Some(OsStr::new("Shared")) {
+        if path.iter().count() == 2 {
+            let mut users = Vec::new();
+            let mut cursor = ACCOUNTS
+                .get()
+                .unwrap()
+                .find(doc! { "access.file": id, "services": path.iter().next().unwrap().to_str().unwrap() }, None)
+                .await?;
+
+            while let Some(user) = cursor.next().await {
+                let mut user = user?;
+                users.push(V1DirItem {
+                    visibility: V1Visibility {
+                        inherited: true,
+                        visibility: ItemVisibility::Private,
+                    },
+                    is_file: false,
+                    name: user.username.clone(),
+                    last_modified: 0,
+                    size: user.get_stored().await?,
+                })
+            }
+
+            return Ok(users);
+        } else {
+            let target = Account::find_by_username(
+                path.iter().nth(2).unwrap().to_string_lossy().to_string(),
+            )
+            .await?;
+
+            if target.is_none()
+                || !target
+                    .as_ref()
+                    .unwrap()
+                    .access
+                    .get(&AccessType::File)
+                    .is_some_and(|set| set.contains(&id))
+            {
+                return Err(V1Error::FileNotFound.into());
+            }
+
+            id = target.unwrap().id;
+            path = [path.iter().next().unwrap()]
+                .into_iter()
+                .chain(path.iter().skip(3))
+                .collect();
+        }
+    }
+
     let pathbuf = get_user_dir(id, None).join(path);
 
     if !try_exists(&pathbuf).await? | has_dotdot(&pathbuf) | is_bson(&pathbuf) {
         return Err(V1Error::FileNotFound.into());
     }
-    let mut items = Vec::new();
-
     if is_owner {
         if !skip_dir_check && !fs::metadata(&pathbuf).await?.is_dir() {
             return Err(V1Error::TypeMismatch.into());

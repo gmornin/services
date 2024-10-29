@@ -8,7 +8,7 @@ use crate::{functions::*, structs::*, traits::CollectionItem, *};
 use goodmorning_bindings::services::v1::{V1Error, V1Response};
 
 #[get("/peek/{id}")]
-async fn peek(path: Path<String>) -> HttpResponse {
+pub async fn peek(path: Path<String>) -> HttpResponse {
     from_res(peek_task(path).await)
 }
 

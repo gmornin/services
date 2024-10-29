@@ -9,7 +9,7 @@ use goodmorning_bindings::{
 use crate::structs::*;
 
 #[post("/login")]
-async fn login(post: Json<V1PasswordId>) -> HttpResponse {
+pub async fn login(post: Json<V1PasswordId>) -> HttpResponse {
     let res = V1Response::from_res(login_task(post).await);
     HttpResponseBuilder::new(StatusCode::from_u16(res.status_code()).unwrap()).json(res)
 }

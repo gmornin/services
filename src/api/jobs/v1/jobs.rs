@@ -9,7 +9,7 @@ use actix_web::{
 use goodmorning_bindings::services::v1::{V1Response, V1TokenOnly};
 
 #[post("/jobs")]
-async fn jobs(post: Json<V1TokenOnly>, userjobs: web::Data<Jobs>) -> HttpResponse {
+pub async fn jobs(post: Json<V1TokenOnly>, userjobs: web::Data<Jobs>) -> HttpResponse {
     from_res(jobs_task(post, userjobs).await)
 }
 

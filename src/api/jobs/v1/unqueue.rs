@@ -9,7 +9,7 @@ use actix_web::{
 use goodmorning_bindings::services::v1::{V1Error, V1Response, V1Unqueue};
 
 #[post("/unqueue")]
-async fn unqueue(post: Json<V1Unqueue>, userjobs: web::Data<Jobs>) -> HttpResponse {
+pub async fn unqueue(post: Json<V1Unqueue>, userjobs: web::Data<Jobs>) -> HttpResponse {
     from_res(unqueue_task(post, userjobs).await)
 }
 
