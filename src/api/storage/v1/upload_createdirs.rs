@@ -116,7 +116,24 @@ async fn upload_createdirs_overwrite_task(
         .await?
         .v1_restrict_verified()?;
 
-    let user_path = PathBuf::from(path.trim_start_matches('/'));
+    let mut user_path = PathBuf::from(path.trim_start_matches('/'));
+
+    if let [_, "Shared", user, ..] = user_path
+        .iter()
+        .map(|s| s.to_str().unwrap())
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
+        account = if let Some(account) = Account::find_by_username(user.to_string()).await? {
+            account.v1_restrict_verified()?
+        } else {
+            return Err(V1Error::FileNotFound.into());
+        };
+        user_path = [user_path.iter().next().unwrap()]
+            .into_iter()
+            .chain(user_path.iter().skip(3))
+            .collect();
+    }
 
     if !editable(&user_path, &account.services) || has_dotdot(&user_path) {
         return Err(V1Error::PermissionDenied.into());
