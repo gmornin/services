@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 use serde_inline_default::serde_inline_default;
@@ -31,11 +33,20 @@ impl ConfigTrait for LimitsConfig {
     const LABEL: &'static str = "limits";
 }
 
-#[serde_inline_default]
-#[derive(Serialize, Deserialize, Clone, Debug, DefaultFromSerde)]
-pub struct StorageLimitConfigs {
-    #[serde_inline_default(536870912)]
-    pub base: u64,
+// #[serde_inline_default]
+// #[derive(Serialize, Deserialize, Clone, Debug, DefaultFromSerde)]
+// pub struct StorageLimitConfigs {
+//     #[serde_inline_default(536870912)]
+//     pub base: u64,
+// }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct StorageLimitConfigs(pub HashMap<String, u64>);
+
+impl Default for StorageLimitConfigs {
+    fn default() -> Self {
+        Self(HashMap::from([("base".to_string(), 536870912)]))
+    }
 }
 
 #[serde_inline_default]

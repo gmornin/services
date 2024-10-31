@@ -1,4 +1,5 @@
 use goodmorning_bindings::services::v1::{AccessType, V1Error, V1IdentifierType};
+use serde_inline_default::serde_inline_default;
 use std::{
     collections::{HashMap, HashSet},
     error::Error,
@@ -43,6 +44,7 @@ impl StorageSize {
     }
 }
 
+#[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Account {
     password_hash: String,
@@ -71,6 +73,9 @@ pub struct Account {
 
     #[serde(default)]
     pub access: HashMap<AccessType, HashSet<i64>>,
+
+    #[serde_inline_default("base".to_string())]
+    pub limit: String,
 }
 
 impl Account {
@@ -141,6 +146,7 @@ impl Account {
             stored: Some(StorageSize::new(0)),
 
             access: HashMap::default(),
+            limit: "base".to_string(),
         })
     }
 
@@ -282,7 +288,7 @@ impl Account {
 
 impl Account {
     pub fn storage_limits(&self, limits: &StorageLimitConfigs) -> u64 {
-        limits.base
+        *limits.0.get(&self.limit).unwrap_or(&0)
     }
 
     pub async fn exceeds_limit(
