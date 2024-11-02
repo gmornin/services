@@ -50,7 +50,7 @@ impl Triggerable for EmailVerification {
     async fn trigger(&self, _id: &str, _expiry: u64) -> Result<(), Box<dyn Error>> {
         let accounts = ACCOUNTS.get().unwrap();
         let mut account = accounts
-            .find_one(doc! {"_id": &self.id}, None)
+            .find_one(doc! {"_id": &self.id})
             .await?
             .ok_or(V1Error::NoSuchUser)?;
 

@@ -20,7 +20,12 @@ async fn access_task(post: Json<V1TokenAccessType>) -> Result<V1Response, Box<dy
 
     let mut users = Vec::new();
 
-    for id in account.access.entry(post.access_type).or_default().iter() {
+    for id in account
+        .access
+        .entry(post.access_type.as_str().to_string())
+        .or_default()
+        .iter()
+    {
         users.push(V1SimpleUser {
             id: *id,
             username: Account::find_by_id(*id, ACCOUNTS.get().unwrap())

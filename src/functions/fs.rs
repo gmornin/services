@@ -44,7 +44,7 @@ pub async fn dir_items(
             let mut cursor = ACCOUNTS
                 .get()
                 .unwrap()
-                .find(doc! { "access.file": id, "services": path.iter().next().unwrap().to_str().unwrap() }, None)
+                .find(doc! { "access.file": id, "services": path.iter().next().unwrap().to_str().unwrap() })
                 .await?;
 
             while let Some(user) = cursor.next().await {
@@ -73,7 +73,7 @@ pub async fn dir_items(
                     .as_ref()
                     .unwrap()
                     .access
-                    .get(&AccessType::File)
+                    .get(AccessType::File.as_str())
                     .is_some_and(|set| set.contains(&id))
             {
                 return Err(V1Error::FileNotFound.into());

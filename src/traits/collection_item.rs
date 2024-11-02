@@ -17,11 +17,11 @@ where
         collection: &Collection<Self>,
     ) -> Result<(), mongodb::error::Error> {
         if collection
-            .find_one_and_replace(doc! {"_id": self.id().into()}, self, None)
+            .find_one_and_replace(doc! {"_id": self.id().into()}, self)
             .await?
             .is_none()
         {
-            collection.insert_one(self, None).await?;
+            collection.insert_one(self).await?;
         };
         Ok(())
     }
@@ -32,7 +32,7 @@ where
         collection: &Collection<Self>,
     ) -> Result<(), mongodb::error::Error> {
         collection
-            .find_one_and_replace(doc! {"_id": self.id().into()}, self, None)
+            .find_one_and_replace(doc! {"_id": self.id().into()}, self)
             .await?;
         Ok(())
     }
@@ -42,14 +42,14 @@ where
         &self,
         collection: &Collection<Self>,
     ) -> Result<(), mongodb::error::Error> {
-        collection.insert_one(self, None).await?;
+        collection.insert_one(self).await?;
         Ok(())
     }
 
     /// deletes self
     async fn delete(&self, collection: &Collection<Self>) -> Result<(), mongodb::error::Error> {
         collection
-            .find_one_and_delete(doc! {"_id": self.id().into()}, None)
+            .find_one_and_delete(doc! {"_id": self.id().into()})
             .await?;
         Ok(())
     }
@@ -58,7 +58,7 @@ where
         id: D,
         collection: &Collection<Self>,
     ) -> Result<Option<Self>, mongodb::error::Error> {
-        collection.find_one(doc! {"_id": id.into()}, None).await
+        collection.find_one(doc! {"_id": id.into()}).await
     }
 
     fn id(&self) -> D;

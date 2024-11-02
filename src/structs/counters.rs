@@ -15,19 +15,16 @@ impl Counter {
         let counters = COUNTERS.get().unwrap();
         let filter = doc! {"_id": id};
         let update = doc! {"$inc": {"count": 1}};
-        let exists = counters.find_one(filter.clone(), None).await?.is_some();
+        let exists = counters.find_one(filter.clone()).await?.is_some();
         Ok(if exists {
-            let options = mongodb::options::FindOneAndUpdateOptions::builder()
-                .upsert(true)
-                .build();
             counters
-                .find_one_and_update(filter, update, options)
+                .find_one_and_update(filter, update)
                 .await?
                 .unwrap()
                 .count
         } else {
             get_counters_doc()
-                .insert_one(doc! {"_id": id, "count": 2}, None)
+                .insert_one(doc! {"_id": id, "count": 2})
                 .await?;
             1
         })

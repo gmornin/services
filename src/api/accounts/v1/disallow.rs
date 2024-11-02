@@ -24,7 +24,10 @@ async fn disallow_task(post: Json<V1Access>) -> Result<V1Response, Box<dyn Error
             None => return Err(V1Error::NoSuchUser.into()),
         };
 
-    let entry = account.access.entry(post.r#type).or_default();
+    let entry = account
+        .access
+        .entry(post.r#type.as_str().to_string())
+        .or_default();
     if !entry.contains(&target.id) {
         return Ok(V1Response::NothingChanged);
     }

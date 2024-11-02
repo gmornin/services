@@ -5,7 +5,7 @@ use std::{
 
 use crate::structs::GMServices;
 
-pub fn editable(path: &Path, services: &[GMServices]) -> bool {
+pub fn editable(path: &Path, services: &[String]) -> bool {
     if is_bson(path) {
         return false;
     }
@@ -17,7 +17,7 @@ pub fn editable(path: &Path, services: &[GMServices]) -> bool {
         && (path_slice.get(1) != Some(&".system") || path_slice.get(2) == Some(&"trash"))
         && (path_slice.get(1) != Some(&"Shared") || path_slice.len() > 2)
         && match GMServices::from_str(path_slice[0]) {
-            Some(service) => services.contains(&service),
+            Some(service) => services.contains(&service.as_str().to_string()),
             None => false,
         }
 }

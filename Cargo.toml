@@ -16,28 +16,28 @@ dyn-clone = "1.0"
 fastrand = "2.0"
 hex = { version = "0.4", default-features = false }
 lettre = { version = "0.11", features = ["builder", "smtp-transport", "tokio1-native-tls"], default-features = false }
-mongodb = "2.4"
+mongodb = "3.1"
 serde = { version = "1.0", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 tokio = "1.26"
 typetag = "0.2"
-actix-multipart = { version = "0.6", features = ["tempfile"], default-features = false }
+actix-multipart = { version = "0.7", features = ["tempfile"], default-features = false }
 futures-util = { version = "0.3", default-features = false }
 async-recursion = "1.0"
 actix-files = "0.6"
 html-escape = { version = "0.2", default-features = false }
 # actix-extensible-rate-limit = "0.2"
 # goodmorning-bindings = {path = "../rust-bindings", version = "*"}
-goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="6093beb", version = "*"}
+goodmorning-bindings = {git = "https://github.com/gmornin/rust-bindings", rev="88648ef", version = "*"}
 regex = { version = "1.8", default-features = false }
-xdg-mime = "0.3"
+xdg-mime = "0.4"
 mime = "0.3"
 # actix-web-lab = "0.19"
 # parking_lot = "0.12"
 dirs = "5.0"
 serde_yaml = "0.9"
 serde-inline-default = "0.2"
-serde_default = "0.1.0"
+serde_default = "0.2"
 
 # pulldown-cmark = "0.9"
 # markdown = "1.0.0-alpha"
@@ -48,3 +48,6 @@ serde_default = "0.1.0"
 default = ["v1-all"]
 v1-all = ["v1"]
 v1 = []
+
+tex = [ "goodmorning-bindings/tex" ]
+blue = [ "goodmorning-bindings/blue" ]

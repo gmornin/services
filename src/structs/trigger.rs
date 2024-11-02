@@ -38,7 +38,7 @@ impl Trigger {
     pub async fn trigger(&self, _db: &Database) -> Result<(), Box<dyn Error>> {
         let triggers = TRIGGERS.get().unwrap();
         let trigger = triggers
-            .find_one_and_delete(doc! {"_id": &self.id}, None)
+            .find_one_and_delete(doc! {"_id": &self.id})
             .await?
             .ok_or(V1Error::TriggerNotFound)?;
 
@@ -53,7 +53,7 @@ impl Trigger {
     pub async fn revoke(&self, db: &Database) -> Result<(), Box<dyn Error>> {
         let triggers = TRIGGERS.get().unwrap();
         let trigger = triggers
-            .find_one_and_delete(doc! {"_id": &self.id}, None)
+            .find_one_and_delete(doc! {"_id": &self.id})
             .await?
             .ok_or(V1Error::TriggerNotFound)?;
 
@@ -87,7 +87,7 @@ impl CollectionItem<String> for Trigger {
         id: String,
         collection: &Collection<Self>,
     ) -> Result<Option<Self>, mongodb::error::Error> {
-        let trigger = collection.find_one(doc! {"_id": id}, None).await?;
+        let trigger = collection.find_one(doc! {"_id": id}).await?;
 
         if let Some(trigger) = &trigger
             && trigger.is_invalid()

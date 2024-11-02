@@ -6,7 +6,7 @@ use crate::{structs::*, *};
 
 pub async fn get_client() -> Client {
     let host = MONGO_HOST.get().unwrap();
-    let client_options = ClientOptions::parse(&host)
+    let client_options = ClientOptions::parse(host)
         .await
         .unwrap_or_else(|_| panic!("cannot resolve mongodb host at `{host}`"));
 

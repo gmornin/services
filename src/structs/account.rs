@@ -1,4 +1,4 @@
-use goodmorning_bindings::services::v1::{AccessType, V1Error, V1IdentifierType};
+use goodmorning_bindings::services::v1::{V1Error, V1IdentifierType};
 use serde_inline_default::serde_inline_default;
 use std::{
     collections::{HashMap, HashSet},
@@ -63,16 +63,18 @@ pub struct Account {
     pub status: String,
     pub created: u64,
 
+    // GMServices
     #[serde(default)]
-    pub services: Vec<GMServices>,
+    pub services: Vec<String>,
 
     #[serde(default)]
     pub counters: AccountCounters,
 
     pub stored: Option<StorageSize>,
 
+    // AccessType
     #[serde(default)]
-    pub access: HashMap<AccessType, HashSet<i64>>,
+    pub access: HashMap<String, HashSet<i64>>,
 
     #[serde_inline_default("base".to_string())]
     pub limit: String,
@@ -205,7 +207,7 @@ impl Account {
         ACCOUNTS
             .get()
             .unwrap()
-            .find_one(doc! {"username":  case_insensitive(username)}, None)
+            .find_one(doc! {"username":  case_insensitive(username)})
             .await
     }
 
@@ -213,7 +215,7 @@ impl Account {
         ACCOUNTS
             .get()
             .unwrap()
-            .find_one(doc! {"email": email.to_lowercase()}, None)
+            .find_one(doc! {"email": email.to_lowercase()})
             .await
     }
 
@@ -221,7 +223,7 @@ impl Account {
         ACCOUNTS
             .get()
             .unwrap()
-            .find_one(doc! {"token": token}, None)
+            .find_one(doc! {"token": token})
             .await
     }
 
@@ -270,7 +272,7 @@ impl Account {
     }
 
     pub fn v1_contains(self, service: &GMServices) -> Result<Self, V1Error> {
-        if !self.services.contains(service) {
+        if !self.services.contains(&service.as_str().to_string()) {
             return Err(V1Error::NotCreated);
         }
 
@@ -278,7 +280,7 @@ impl Account {
     }
 
     pub fn v1_not_contains(self, service: &GMServices) -> Result<Self, V1Error> {
-        if self.services.contains(service) {
+        if self.services.contains(&service.as_str().to_string()) {
             return Err(V1Error::AlreadyCreated);
         }
 
@@ -372,10 +374,12 @@ impl From<V1IdentifierType> for IdentifierType {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccountCounters {
+    #[cfg(feature = "tex")]
     #[serde(default = "tex_publishes_default")]
     pub tex_publishes: i64,
 }
 
+#[cfg(feature = "tex")]
 fn tex_publishes_default() -> i64 {
     1
 }
@@ -383,6 +387,7 @@ fn tex_publishes_default() -> i64 {
 impl Default for AccountCounters {
     fn default() -> Self {
         Self {
+            #[cfg(feature = "tex")]
             tex_publishes: tex_publishes_default(),
         }
     }

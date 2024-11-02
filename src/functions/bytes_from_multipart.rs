@@ -9,9 +9,9 @@ pub async fn bytes_from_multipart(mut payload: Multipart) -> Result<Vec<u8>, Mul
     #[allow(clippy::single_match)]
     while let Some(mut field) = payload.try_next().await? {
         let content_disposition = field.content_disposition();
-        let field_name = content_disposition.get_name().unwrap();
+        let field_name = content_disposition.unwrap().get_name();
         match field_name {
-            "file" => {
+            Some("file") => {
                 while let Some(chunk) = field.try_next().await? {
                     file_data.extend_from_slice(&chunk);
                 }
