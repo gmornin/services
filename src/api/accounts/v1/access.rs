@@ -34,7 +34,7 @@ async fn access_task(
         )
         .await?
         {
-            if account
+            if target
                 .access
                 .get(AccessType::Access.as_str())
                 .is_some_and(|map| map.contains(&account.id))
