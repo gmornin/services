@@ -23,7 +23,7 @@ Status code: `200`
 
 ```json
 {
-  "type": "access",
+  "type": "allowed access",
   "users": [
     {
       "id": Int,

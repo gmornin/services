@@ -67,5 +67,5 @@ async fn accessto_task(
         });
     }
 
-    Ok(V1Response::Access { users })
+    Ok(V1Response::AllowedAccess { users })
 }
