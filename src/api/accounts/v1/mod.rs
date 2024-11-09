@@ -26,6 +26,7 @@ pub fn scope() -> Scope {
         .service(change_email::change_email)
         .service(resend_verify::resend_verify)
         .service(allow::allow)
+        .service(accessto::accessto)
         .service(access::access)
         .service(disallow::disallow)
 }
