@@ -1,17 +1,19 @@
 use std::error::Error;
 
-use crate::{functions::*, structs::*, traits::CollectionItem, *};
+use crate::{functions::*, structs::*, *};
 use actix_web::{post, web::Json, HttpResponse};
+use futures_util::StreamExt;
 use goodmorning_bindings::services::v1::{
     AccessType, V1Error, V1Response, V1SimpleUser, V1TokenAccessTypeOptionIdentifier,
 };
+use mongodb::bson::doc;
 
-#[post("/access")]
-pub async fn access(post: Json<V1TokenAccessTypeOptionIdentifier>) -> HttpResponse {
-    from_res(access_task(post).await)
+#[post("/accessto")]
+pub async fn accessto(post: Json<V1TokenAccessTypeOptionIdentifier>) -> HttpResponse {
+    from_res(accessto_task(post).await)
 }
 
-async fn access_task(
+async fn accessto_task(
     post: Json<V1TokenAccessTypeOptionIdentifier>,
 ) -> Result<V1Response, Box<dyn Error>> {
     let post = post.into_inner();
@@ -50,18 +52,18 @@ async fn access_task(
 
     let mut users = Vec::new();
 
-    for id in account
-        .access
-        .entry(post.access_type.as_str().to_string())
-        .or_default()
-        .iter()
-    {
+    let mut cursor = ACCOUNTS
+        .get()
+        .unwrap()
+        .find(doc! { format!("access.{}", post.access_type.as_str()): account.id })
+        .await?;
+
+    while let Some(user) = cursor.next().await {
+        let user = user?;
+
         users.push(V1SimpleUser {
-            id: *id,
-            username: Account::find_by_id(*id, ACCOUNTS.get().unwrap())
-                .await?
-                .unwrap()
-                .username,
+            id: user.id,
+            username: user.username,
         });
     }
 

@@ -1,6 +1,7 @@
 use actix_web::Scope;
 
 mod access;
+mod accessto;
 mod allow;
 mod change_email;
 mod change_password;

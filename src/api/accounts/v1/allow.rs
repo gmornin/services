@@ -15,8 +15,7 @@ async fn allow_task(post: Json<V1Access>) -> Result<V1Response, Box<dyn Error>> 
     let mut account = match Account::find_by_token(&post.token).await? {
         Some(account) => account,
         None => return Err(V1Error::InvalidToken.into()),
-    }
-    .v1_restrict_verified()?;
+    };
 
     let target =
         match Account::find_by_idenifier(&post.identifier_type.into(), post.identifier).await? {

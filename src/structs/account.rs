@@ -68,7 +68,7 @@ pub struct Account {
     pub services: Vec<String>,
 
     #[serde(default)]
-    pub counters: AccountCounters,
+    pub counters: HashMap<String, i64>,
 
     pub stored: Option<StorageSize>,
 
@@ -117,6 +117,18 @@ impl Account {
         Ok(self.stored.as_ref().unwrap().value)
     }
 
+    pub fn get_counter(&mut self, label: String) -> &mut i64 {
+        self.counters.entry(label).or_insert(1)
+    }
+
+    pub fn matches_identifier(&self, ident: &str, ident_type: IdentifierType) -> bool {
+        match ident_type {
+            IdentifierType::Id => self.id.to_string().as_str() == ident,
+            IdentifierType::Email => self.email.eq_ignore_ascii_case(ident),
+            IdentifierType::Username => self.username.eq_ignore_ascii_case(ident),
+        }
+    }
+
     /// Create new instance of self with default values, including a unique ID
     pub async fn new(
         username: String,
@@ -143,7 +155,7 @@ impl Account {
 
             services: Vec::new(),
 
-            counters: AccountCounters::default(),
+            counters: HashMap::new(),
 
             stored: Some(StorageSize::new(0)),
 
@@ -368,27 +380,6 @@ impl From<V1IdentifierType> for IdentifierType {
             V1IdentifierType::Email => Self::Email,
             V1IdentifierType::Username => Self::Username,
             V1IdentifierType::Id => Self::Id,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AccountCounters {
-    #[cfg(feature = "tex")]
-    #[serde(default = "tex_publishes_default")]
-    pub tex_publishes: i64,
-}
-
-#[cfg(feature = "tex")]
-fn tex_publishes_default() -> i64 {
-    1
-}
-
-impl Default for AccountCounters {
-    fn default() -> Self {
-        Self {
-            #[cfg(feature = "tex")]
-            tex_publishes: tex_publishes_default(),
         }
     }
 }
