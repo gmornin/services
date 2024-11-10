@@ -89,7 +89,7 @@ pub async fn dir_items(
 
     let pathbuf = get_user_dir(id, None).join(path);
 
-    if !try_exists(&pathbuf).await? | has_dotdot(&pathbuf) | is_bson(&pathbuf) {
+    if !try_exists(&pathbuf).await? || has_dotdot(&pathbuf) || is_bson(&pathbuf) {
         return Err(V1Error::FileNotFound.into());
     }
     if is_owner {

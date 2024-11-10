@@ -1,4 +1,4 @@
-POST `/api/accounts/v1/access`
+POST `/api/accounts/v1/accessto`
 
 ---
 
