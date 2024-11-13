@@ -54,6 +54,17 @@ impl Default for StorageLimitConfigs {
 pub struct QueueConfigs {
     #[serde_inline_default(1)]
     pub max_concurrent: usize,
+    #[serde_inline_default(5)]
+    pub queue_limit: usize,
+    #[serde_inline_default(HashMap::new())]
+    pub presets: HashMap<String, QueueConfig>,
+}
+
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Clone, DefaultFromSerde)]
+pub struct QueueConfig {
+    #[serde_inline_default(1)]
+    pub max_concurrent: usize,
     #[serde_inline_default(9999)]
     pub queue_limit: usize,
 }

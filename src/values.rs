@@ -14,14 +14,22 @@ use crate::{
     functions::{get_accounts, get_client, get_counters, get_database, get_triggers, parse_path},
     structs::{
         Account, Counter, CredentialsConfig, DefaultsConfig, EmailLists, FileCheckType,
-        ItemVisibility, LimitsConfig, StorageConfig, StorageLimitConfigs, Trigger, WhitelistConfig,
+        ItemVisibility, LimitsConfig, QueueConfig, StorageConfig, StorageLimitConfigs, Trigger,
+        WhitelistConfig,
     },
     traits::ConfigTrait,
 };
-use std::{collections::HashSet, fs, path::PathBuf, sync::OnceLock, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    path::PathBuf,
+    sync::OnceLock,
+    time::Duration,
+};
 
 pub static PFP_LIMIT: OnceLock<u64> = OnceLock::new();
 pub static QUEUE_LIMIT: OnceLock<usize> = OnceLock::new();
+pub static QUEUE_PRESETS: OnceLock<HashMap<String, QueueConfig>> = OnceLock::new();
 pub static MAX_CONCURRENT: OnceLock<usize> = OnceLock::new();
 pub static STORAGE_LIMITS: OnceLock<StorageLimitConfigs> = OnceLock::new();
 pub static EMAIL_VERIFICATION_DURATION: OnceLock<Duration> = OnceLock::new();
@@ -76,6 +84,7 @@ pub async fn valinit() {
     let limit_configs = *LimitsConfig::load().unwrap();
     PFP_LIMIT.set(limit_configs.pfp_limit).unwrap();
     QUEUE_LIMIT.set(limit_configs.jobs.queue_limit).unwrap();
+    let _ = QUEUE_PRESETS.set(limit_configs.jobs.presets);
     MAX_CONCURRENT
         .set(limit_configs.jobs.max_concurrent)
         .unwrap();

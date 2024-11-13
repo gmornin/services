@@ -30,6 +30,7 @@ impl Jobs {
         id: i64,
         task: Box<dyn TaskItem>,
         max_concurrent: usize,
+        queue_limit: usize,
         ver: ApiVer,
         time_limit: Duration,
     ) -> CommonRes {
@@ -38,6 +39,7 @@ impl Jobs {
         Job::run_with_limit(
             arc,
             max_concurrent,
+            queue_limit,
             SingleJob {
                 task,
                 id: fastrand::u64(..),
@@ -73,6 +75,7 @@ impl Job {
     async fn run_with_limit(
         arc: Arc<Mutex<Self>>,
         max_concurrent: usize,
+        queue_limit: usize,
         job: SingleJob,
         ver: ApiVer,
     ) -> CommonRes {
@@ -86,6 +89,11 @@ impl Job {
 
         {
             let mut unlocked = arc.lock().unwrap();
+            if unlocked.queue.len() >= queue_limit {
+                return match ver {
+                    ApiVer::V1 => CommonRes::V1(Err(V1Error::QueueFull)),
+                };
+            }
             unlocked.queue.push(job);
             unlocked.bump(max_concurrent, &arc);
         }
