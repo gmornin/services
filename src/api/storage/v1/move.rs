@@ -4,7 +4,7 @@ use tokio::fs;
 
 use goodmorning_bindings::services::v1::{V1Error, V1Response, V1SelfFromTo};
 
-use crate::{functions::*, structs::*};
+use crate::{functions::*, structs::*, FILE_CHECK};
 
 #[post("/move")]
 pub async fn r#move(post: Json<V1SelfFromTo>) -> HttpResponse {
@@ -85,7 +85,7 @@ async fn move_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error
         return Err(V1Error::FileNotFound.into());
     }
 
-    if from_buf.extension() != to_buf.extension() {
+    if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
         return Err(V1Error::ExtensionMismatch.into());
     }
 
