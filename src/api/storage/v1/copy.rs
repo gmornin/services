@@ -96,7 +96,9 @@ async fn copy_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn Error>> {
     let metadata = fs::metadata(&from_buf).await?;
 
     if metadata.is_file() {
-        if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
+        if from_buf.extension() != to_buf.extension()
+            && FileCheckType::None != *FILE_CHECK.get().unwrap()
+        {
             return Err(V1Error::ExtensionMismatch.into());
         }
 

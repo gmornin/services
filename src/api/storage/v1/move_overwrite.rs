@@ -81,7 +81,9 @@ async fn move_overwrite_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box
         return Err(V1Error::FileNotFound.into());
     }
 
-    if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
+    if from_buf.extension() != to_buf.extension()
+        && FileCheckType::None != *FILE_CHECK.get().unwrap()
+    {
         return Err(V1Error::ExtensionMismatch.into());
     }
 

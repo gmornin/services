@@ -83,7 +83,9 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
         return Err(V1Error::FileNotFound.into());
     }
 
-    if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
+    if from_buf.extension() != to_buf.extension()
+        && FileCheckType::None != *FILE_CHECK.get().unwrap()
+    {
         return Err(V1Error::ExtensionMismatch.into());
     }
 
@@ -105,7 +107,9 @@ async fn copy_overwrite_task(post: Json<V1FromTo>) -> Result<V1Response, Box<dyn
     };
 
     if metadata.is_file() {
-        if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
+        if from_buf.extension() != to_buf.extension()
+            && FileCheckType::None != *FILE_CHECK.get().unwrap()
+        {
             return Err(V1Error::ExtensionMismatch.into());
         }
 

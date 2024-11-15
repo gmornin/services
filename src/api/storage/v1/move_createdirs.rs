@@ -81,7 +81,9 @@ async fn move_task(post: Json<V1SelfFromTo>) -> Result<V1Response, Box<dyn Error
         return Err(V1Error::FileNotFound.into());
     }
 
-    if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
+    if from_buf.extension() != to_buf.extension()
+        && FileCheckType::None != *FILE_CHECK.get().unwrap()
+    {
         return Err(V1Error::ExtensionMismatch.into());
     }
 
@@ -197,7 +199,9 @@ async fn move_createdirs_overwrite_task(
         return Err(V1Error::FileNotFound.into());
     }
 
-    if from_buf.extension() != to_buf.extension() && FileCheckType::None != *FILE_CHECK.get().unwrap() {
+    if from_buf.extension() != to_buf.extension()
+        && FileCheckType::None != *FILE_CHECK.get().unwrap()
+    {
         return Err(V1Error::ExtensionMismatch.into());
     }
 

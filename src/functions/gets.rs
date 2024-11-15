@@ -29,6 +29,10 @@ pub fn get_triggers() -> Collection<Trigger> {
     DATABASE.get().unwrap().collection("triggers")
 }
 
+pub fn get_invites() -> Collection<Trigger> {
+    DATABASE.get().unwrap().collection("invites")
+}
+
 pub fn get_counters() -> Collection<Counter> {
     DATABASE.get().unwrap().collection("counters")
 }

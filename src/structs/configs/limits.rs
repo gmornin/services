@@ -13,6 +13,8 @@ pub struct LimitsConfig {
     pub verification_timeframe: u64,
     #[serde_inline_default(3600)]
     pub verification_cooldown: u64,
+    #[serde_inline_default(86400)]
+    pub invite_timeframe: u64,
     #[serde(default)]
     pub storage_limits: StorageLimitConfigs,
     #[serde_inline_default(2097152)]
@@ -21,6 +23,8 @@ pub struct LimitsConfig {
     pub jobs: QueueConfigs,
     #[serde_inline_default(true)]
     pub allow_register: bool,
+    #[serde_inline_default(true)]
+    pub allow_invites: bool,
     #[serde_inline_default(true)]
     pub verification: bool,
     #[serde_inline_default(43200)]

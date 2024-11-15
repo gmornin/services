@@ -8,6 +8,7 @@ mod change_password;
 mod create;
 mod delete;
 mod disallow;
+mod invite;
 mod login;
 mod regeneratetoken;
 mod rename;
@@ -29,4 +30,5 @@ pub fn scope() -> Scope {
         .service(accessto::accessto)
         .service(access::access)
         .service(disallow::disallow)
+        .service(invite::invite)
 }

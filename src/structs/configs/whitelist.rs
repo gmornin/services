@@ -11,6 +11,8 @@ use crate::{functions::parse_path, traits::ConfigTrait};
 pub struct WhitelistConfig {
     #[serde_inline_default(vec!["127.0.0.1".to_string()])]
     pub create: Vec<String>,
+    #[serde_inline_default(HashSet::new())]
+    pub invite: HashSet<i64>,
     #[serde(default)]
     pub file_check: FileCheckWhitelist,
     #[serde(default)]

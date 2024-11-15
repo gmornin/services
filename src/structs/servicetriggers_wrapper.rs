@@ -58,6 +58,7 @@ impl Peekable for ServiceTriggerWrapper {
 </html>"#
                 )
             }
+            _ => return None,
         };
 
         Some(

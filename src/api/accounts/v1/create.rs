@@ -1,18 +1,35 @@
-use std::error::Error;
+use std::{any::Any, error::Error};
 
-use actix_web::{post, web::Json, HttpRequest, HttpResponse};
-use goodmorning_bindings::services::v1::{V1All3, V1Error, V1Response};
+use actix_web::{
+    post,
+    web::{Json, Query},
+    HttpRequest, HttpResponse,
+};
+use goodmorning_bindings::{
+    services::v1::{V1All3, V1Error, V1Response},
+    structs::ServicesTriggerTypes,
+};
+use serde::Deserialize;
 
 use crate::{functions::*, structs::*, traits::CollectionItem, *};
 
-#[post("/create")]
-pub async fn create(post: Json<V1All3>, req: HttpRequest) -> HttpResponse {
-    from_res(create_task(post, req).await)
+#[derive(Deserialize)]
+pub struct Invite {
+    pub invite: Option<String>,
 }
 
-async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response, Box<dyn Error>> {
-    if !ALLOW_REGISTER.get().unwrap()
-        && !CREATE_WHITELIST
+#[post("/create")]
+pub async fn create(post: Json<V1All3>, query: Query<Invite>, req: HttpRequest) -> HttpResponse {
+    from_res(create_task(post, query.into_inner().invite, req).await)
+}
+
+async fn create_task(
+    post: Json<V1All3>,
+    invite: Option<String>,
+    req: HttpRequest,
+) -> Result<V1Response, Box<dyn Error>> {
+    let mut allow_create = *ALLOW_REGISTER.get().unwrap()
+        || CREATE_WHITELIST
             .get()
             .unwrap()
             .contains(&if *FORWARDED.get().unwrap() {
@@ -22,8 +39,32 @@ async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response,
                     .to_string()
             } else {
                 req.connection_info().peer_addr().unwrap().to_string()
-            })
-    {
+            });
+
+    let mut invite_trigger = None;
+
+    if let Some(invite) = invite {
+        if let Some(trigger) = Trigger::find_by_id(invite, TRIGGERS.get().unwrap()).await? {
+            let peek: Box<dyn Any> = match trigger.peek() {
+                Some(trigger) => trigger,
+                None => return Err(V1Error::TriggerNotFound.into()),
+            };
+
+            if (trigger.is_invalid()
+                || !peek
+                    .downcast_ref::<ServiceTriggerWrapper>()
+                    .is_some_and(|wrapper| matches!(wrapper.0.value, ServicesTriggerTypes::Invite)))
+                && !allow_create
+            {
+                return Err(V1Error::TriggerNotFound.into());
+            }
+
+            invite_trigger = Some(trigger);
+            allow_create = true;
+        }
+    }
+
+    if !allow_create {
         return Err(V1Error::FeatureDisabled.into());
     }
 
@@ -57,6 +98,11 @@ async fn create_task(post: Json<V1All3>, req: HttpRequest) -> Result<V1Response,
     .await?;
 
     account.email_verification().await?;
+
+    if let Some(invite_trigger) = invite_trigger {
+        invite_trigger.trigger(DATABASE.get().unwrap()).await?;
+    }
+
     account.save_create(ACCOUNTS.get().unwrap()).await?;
 
     Ok(V1Response::Created {

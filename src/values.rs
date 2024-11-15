@@ -33,8 +33,10 @@ pub static QUEUE_PRESETS: OnceLock<HashMap<String, QueueConfig>> = OnceLock::new
 pub static MAX_CONCURRENT: OnceLock<usize> = OnceLock::new();
 pub static STORAGE_LIMITS: OnceLock<StorageLimitConfigs> = OnceLock::new();
 pub static EMAIL_VERIFICATION_DURATION: OnceLock<Duration> = OnceLock::new();
+pub static INVITE_DURATION: OnceLock<Duration> = OnceLock::new();
 pub static EMAIL_VERIFICATION_COOLDOWN: OnceLock<u64> = OnceLock::new();
 pub static ALLOW_REGISTER: OnceLock<bool> = OnceLock::new();
+pub static ALLOW_INVITE: OnceLock<bool> = OnceLock::new();
 pub static VERIFICATION: OnceLock<bool> = OnceLock::new();
 pub static STATUS_LENGTH_LIMIT: OnceLock<usize> = OnceLock::new();
 pub static STORAGE_SIZE_RECHECK: OnceLock<u64> = OnceLock::new();
@@ -66,6 +68,7 @@ pub static PORT: OnceLock<u16> = OnceLock::new();
 pub static FORWARDED: OnceLock<bool> = OnceLock::new();
 
 pub static CREATE_WHITELIST: OnceLock<Vec<String>> = OnceLock::new();
+pub static INVITE_WHITELIST: OnceLock<HashSet<i64>> = OnceLock::new();
 pub static EMAIL_WHITELIST: OnceLock<EmailLists> = OnceLock::new();
 
 pub static DATABASE: OnceLock<Database> = OnceLock::new();
@@ -89,6 +92,9 @@ pub async fn valinit() {
         .set(limit_configs.jobs.max_concurrent)
         .unwrap();
     STORAGE_LIMITS.set(limit_configs.storage_limits).unwrap();
+    INVITE_DURATION
+        .set(Duration::from_secs(limit_configs.invite_timeframe))
+        .unwrap();
     EMAIL_VERIFICATION_DURATION
         .set(Duration::from_secs(limit_configs.verification_timeframe))
         .unwrap();
@@ -96,6 +102,7 @@ pub async fn valinit() {
         .set(limit_configs.verification_cooldown)
         .unwrap();
     ALLOW_REGISTER.set(limit_configs.allow_register).unwrap();
+    ALLOW_INVITE.set(limit_configs.allow_invites).unwrap();
     VERIFICATION.set(limit_configs.verification).unwrap();
     STATUS_LENGTH_LIMIT
         .set(limit_configs.length_limits.status_limit)
@@ -137,6 +144,7 @@ pub async fn valinit() {
     let mut whitelist_config = *WhitelistConfig::load().unwrap();
     whitelist_config.create.sort();
     CREATE_WHITELIST.set(whitelist_config.create).unwrap();
+    INVITE_WHITELIST.set(whitelist_config.invite).unwrap();
     FILE_CHECK_MIMETYPES
         .set(HashSet::from_iter(
             whitelist_config.file_check.mime_fronttype,
