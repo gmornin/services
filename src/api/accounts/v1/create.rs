@@ -60,7 +60,10 @@ async fn create_task(
             }
 
             invite_trigger = Some(trigger);
-            allow_create = true;
+
+            if *ALLOW_INVITE.get().unwrap() {
+                allow_create = true;
+            }
         }
     }
 
